@@ -17,7 +17,7 @@ Node.js BOT（Render上で常時稼働）
         │  └ 承認／却下Embed通知
         ▼
 Discordへ審査結果Embedを返信
-※ 旧バージョンではOCI/Pipedreamなども併用されていたが、現行設計はNode.js BOTのみで審査・判定～通知まで全完結！
+※ 旧バージョンではOCI/Pipedreamなども併用されていたが、現行設計はNode.js BOTのみで審査・判定～通知まで全完結
 
 【ファイル構成】
 index.js … メインBOT本体（申請フロー・審査ロジック・通知・ログ管理）

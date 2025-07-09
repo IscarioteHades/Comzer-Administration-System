@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
 
-  /* ▼ 追加：Node を 20 系で固定（22 系は一部 pkg が未対応） */
+
   "engines": {
     "node": "20.x"
   },
@@ -11,7 +11,7 @@
   "scripts": {
     "start": "node index.js",
     "deploy": "node commands/deploy-commands.js",
-    "postinstall": "node commands/deploy-commands.js"   /* ← 変更なし */
+    "postinstall": "node commands/deploy-commands.js"
   },
 
   "dependencies": {

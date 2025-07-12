@@ -47,16 +47,20 @@ const sheetId = SHEET_ID_RAW.match(/[-\w]{25,}/)?.[0] || SHEET_ID_RAW;
 const today = (new Date()).toISOString().slice(0,10);
 const prompt = extractionPrompt.replace("__TODAY__", today);
 const ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/5dwbifgYfsdWpZx/preview'; // ← 好みの外務省アイコン URL
-const ROLE_CONFIG = {
-  '1269977067341221979': {              //外交補佐官ロール
-    name: '外交官(外務省 総合外務部職員)',
-    icon: ICON_URL,
-  },
-  '1188421712111484958': {              // 大統領ロール
-    name: '外交官(外務省 総合外務部職員)',
-    icon: ICON_URL,
-  },
-};
+
+// 1. 環境変数からロールIDリストを取得
+const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',');
+
+// 2. ROLE_CONFIGを動的生成
+const ROLE_CONFIG = Object.fromEntries(
+  DIPLOMAT_ROLE_IDS.filter(Boolean).map(roleId => [
+    roleId,
+    {
+      name: '外交官(外務省 総合外務部職員)',
+      icon: ICON_URL,
+    }
+  ])
+);
 
 const webhooks = new Map();
 async function getOrCreateHook(channel, roleId) {

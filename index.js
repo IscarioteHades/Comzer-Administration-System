@@ -24,6 +24,7 @@ import {
   SelectMenuBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ActivityType,
 } from "discord.js";
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";

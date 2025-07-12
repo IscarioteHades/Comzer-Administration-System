@@ -330,15 +330,26 @@ for (const joiner of parsed.joiners) {
 
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
-    try {
-      // 管理コマンドを処理
-      const handled = await handleCommands(interaction);
-      if (handled) return;
+  try {
+    // 管理コマンド（ブラックリスト／status等）はhandleCommandsへ集約
+    const handled = await handleCommands(interaction);
+    if (handled) return;
 
-      if (interaction.isChatInputCommand()) {
-        const cmd = bot.commands.get(interaction.commandName);
-        if (cmd) return cmd.execute(interaction);
+    if (interaction.isChatInputCommand()) {
+      const cmd = bot.commands.get(interaction.commandName);
+      if (cmd) {
+        await cmd.execute(interaction);
+        return;
       }
+      // ★ コマンドが存在しない場合のみfallback
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: "その操作にはまだ対応していません。",
+          ephemeral: true
+        });
+      }
+      return;
+    }
 
   
       // DEBUG出力は省略可

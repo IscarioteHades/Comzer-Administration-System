@@ -156,6 +156,35 @@ async function endSession(id, status) {
   }
   sessions.delete(id);
 }
+
+import * as statusCommand from './commands/status.js';
+
+// ...既存のコマンド登録部分に追加
+bot.commands = new Collection([
+  [embedPost.data.name, embedPost],
+  [statusCommand.data.name, statusCommand], // ←これを追加
+]);
+
+// ステータスメッセージ更新＆診断時刻管理
+setInterval(() => {
+  const jstTime = new Date().toLocaleString("ja-JP", { hour12: false });
+  bot.user.setActivity(
+    `コムザール行政システム(CAS) 稼働中 | 診断:${jstTime}`,
+    { type: ActivityType.Watching }
+  );
+  statusCommand.updateLastSelfCheck(); // ←最終診断時刻を更新
+}, 30 * 60 * 1000);
+
+// BOT起動直後にも初期化
+bot.once("ready", () => {
+  const jstTime = new Date().toLocaleString("ja-JP", { hour12: false });
+  bot.user.setActivity(
+    `コムザール行政システム稼働中 | 最新自己診断時刻:${jstTime}`,
+    { type: ActivityType.Watching }
+  );
+  statusCommand.updateLastSelfCheck();
+});
+
 // タイムアウト監視 (10 分)
 setInterval(() => {
   const now = Date.now();

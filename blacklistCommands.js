@@ -4,6 +4,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v10";
 import { GoogleSpreadsheet } from "google-spreadsheet";
+import { execute as executeStatus } from "./commands/status.js";
 
 // Googleシート設定
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -206,5 +207,9 @@ export async function handleCommands(interaction) {
     return true;
   }
 
+  if (name === "status") {
+    await executeStatus(interaction);
+    return true;
+  }
   return false;
 }

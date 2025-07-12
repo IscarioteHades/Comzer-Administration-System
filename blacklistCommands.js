@@ -134,8 +134,8 @@ export async function handleCommands(interaction) {
   const name = interaction.commandName;
 
   // 管理者チェック（環境変数 ADMIN_IDS に許可ユーザーIDをカンマ区切りで）
-  const adminIds = process.env.ADMIN_IDS?.split(",") || [];
-  if (!adminIds.includes(interaction.user.id)) {
+  const ministerRoleId = process.env.ROLLID_MINISTER;
+  if (!interaction.member?.roles?.cache?.has(ministerRoleId)) {
     await interaction.reply({ content: "君はステージが低い。君のコマンドを受け付けると君のカルマが私の中に入って来て私が苦しくなる。(権限エラー)", ephemeral: true });
     return true;
   }

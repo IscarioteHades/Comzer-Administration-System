@@ -53,7 +53,7 @@ export async function execute(interaction) {
     // PlayerDBのAPIは success:true のJSONが返る
     if (resp.data && resp.data.success) bedrockApi = '✅ Bedrock API：連携中';
   } catch {}
-
+  if (interaction.replied || interaction.deferred) return;
   await interaction.reply({
     embeds: [
       new EmbedBuilder()

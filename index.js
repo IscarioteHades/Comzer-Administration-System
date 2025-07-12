@@ -335,11 +335,11 @@ bot.on('interactionCreate', async interaction => {
       const handled = await handleCommands(interaction);
       if (handled) return;
 
-          // rolepost コマンド
-       if (interaction.isChatInputCommand()) {
-         const cmd = bot.commands.get(interaction.commandName);
-     if (cmd) return cmd.execute(interaction);
-     }
+      if (interaction.isChatInputCommand()) {
+        const cmd = bot.commands.get(interaction.commandName);
+        if (cmd) return cmd.execute(interaction);
+      }
+
   
       // DEBUG出力は省略可
       console.log(
@@ -724,3 +724,4 @@ bot.on('messageCreate', async m => {
 
 // ── Bot 起動
 bot.login(DISCORD_TOKEN);
+

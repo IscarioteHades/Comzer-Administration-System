@@ -133,9 +133,12 @@ export async function handleCommands(interaction) {
 
   const name = interaction.commandName;
 
-  // 管理者チェック（環境変数 ADMIN_IDS に許可ユーザーIDをカンマ区切りで）
-const adminIds = process.env.ADMIN_IDS?.split(",") || [];
-if (!adminIds.includes(interaction.user.id)) {
+  // 権限チェック（環境変数 ROLLID_MINISTER に許可ロールIDをカンマ区切りで）
+const ALLOWED_ROLE_IDS = (process.env.ROLLID_MINISTER || process.env.ROLLID_DIPLOMAT || '').split(',');
+const hasRole = ALLOWED_ROLE_IDS.some(roleId =>
+  interaction.member?.roles?.cache?.has(roleId)
+);
+if (!hasRole) {
   await interaction.reply({ content: "君はステージが低い。君のコマンドを受け付けると君のカルマが私の中に入って来て私が苦しくなる。(権限エラー)", ephemeral: true });
   return true;
 }

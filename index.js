@@ -724,4 +724,3 @@ bot.on('messageCreate', async m => {
 
 // ── Bot 起動
 bot.login(DISCORD_TOKEN);
-

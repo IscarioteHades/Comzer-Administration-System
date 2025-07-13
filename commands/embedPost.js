@@ -69,7 +69,6 @@ export async function execute(interaction) {
   const member = interaction.member;
   const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {};
 
-  // デバッグ用出力ここから
   const userRoles = member.roles.cache.map(r => String(r.id));
   const configKeys = Object.keys(ROLE_CONFIG).map(String);
   const userRoleIds = configKeys.filter(rid => userRoles.includes(rid));
@@ -80,46 +79,38 @@ export async function execute(interaction) {
   // 既にONならOFF
   if (isActive(interaction.channelId, interaction.user.id)) {
     setInactive(interaction.channelId);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({ content: `役職発言モードを **OFF** にしました。`, ephemeral: true });
-    }
+    await interaction.editReply({ content: `役職発言モードを **OFF** にしました。` });
     return;
   }
 
   if (userRoleIds.length === 0) {
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({ content: "役職ロールを保有していません。", ephemeral: true });
-    }
+    await interaction.editReply({ content: "役職ロールを保有していません。" });
     return;
   }
 
   if (userRoleIds.length > 1) {
-    if (!interaction.replied && !interaction.deferred) {
-      const row = new ActionRowBuilder().addComponents(
-        new SelectMenuBuilder()
-          .setCustomId(`rolepost-choose-${interaction.user.id}`)
-          .setPlaceholder('役職を選択してください')
-          .addOptions(userRoleIds.map(rid => ({
-            label: ROLE_CONFIG[rid].name,
-            value: rid,
-            emoji: '🟦',
-          })))
-      );
-      await interaction.reply({
-        content: 'どの役職で発言モードを有効にしますか？',
-        components: [row],
-        ephemeral: true,
-      });
-    }
+    const row = new ActionRowBuilder().addComponents(
+      new SelectMenuBuilder()
+        .setCustomId(`rolepost-choose-${interaction.user.id}`)
+        .setPlaceholder('役職を選択してください')
+        .addOptions(userRoleIds.map(rid => ({
+          label: ROLE_CONFIG[rid].name,
+          value: rid,
+          emoji: '🟦',
+        })))
+    );
+    await interaction.editReply({
+      content: 'どの役職で発言モードを有効にしますか？',
+      components: [row],
+    });
     return;
   }
 
   // 1つだけ持ってる場合は即ON
   setActive(interaction.channelId, interaction.user.id, userRoleIds[0]);
-  if (!interaction.replied && !interaction.deferred) {
-    await interaction.reply({ content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[userRoleIds[0]].name}）`, ephemeral: true });
-  }
+  await interaction.editReply({ content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[userRoleIds[0]].name}）` });
 }
+
 
 
 /* --------------------------------------------------

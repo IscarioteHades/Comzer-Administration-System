@@ -65,6 +65,7 @@ const ROLE_CONFIG = {
       embedIcon:   DIPLOMAT_ICON_URL,
       webhookName: 'コムザール連邦共和国 外務省',
       webhookIcon: DIPLOMAT_ICON_URL,
+      canDelete: [ DIPLOMAT_ID, MINISTER_ID ],  
     }])
   ),
   // ── 閣僚議会議員ロールをまとめて
@@ -74,6 +75,7 @@ const ROLE_CONFIG = {
       embedIcon:   MINISTER_ICON_URL,
       webhookName: 'コムザール連邦共和国 大統領府',
       webhookIcon: MINISTER_ICON_URL,
+      canDelete: [ MINISTER_ID ], 
     }])
   ),
 };

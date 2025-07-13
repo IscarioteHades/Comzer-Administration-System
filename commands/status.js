@@ -16,6 +16,7 @@ export const data = new SlashCommandBuilder()
 
 // コマンド実行本体
 export async function execute(interaction) {
+    console.log("[STATUS EXECUTE] replied:", interaction.replied, "deferred:", interaction.deferred);
   if (interaction.replied || interaction.deferred) return;
   // JSTで表示
   const timeStr = lastSelfCheck.toLocaleString('ja-JP', { hour12: false, timeZone: 'Asia/Tokyo' });

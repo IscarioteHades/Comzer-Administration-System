@@ -64,7 +64,14 @@ export function setInactive(channelId) {
 export async function execute(interaction) {
   const member = interaction.member;
   const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {};
-  const userRoleIds = Object.keys(ROLE_CONFIG).filter(rid => member.roles.cache.has(rid));
+
+  // デバッグ用出力ここから
+  const userRoles = member.roles.cache.map(r => String(r.id));
+  const configKeys = Object.keys(ROLE_CONFIG).map(String);
+  const userRoleIds = configKeys.filter(rid => userRoles.includes(rid));
+  console.log("[ROLEPOST DEBUG] ユーザーロールID:", userRoles);
+  console.log("[ROLEPOST DEBUG] ROLE_CONFIG キー:", configKeys);
+  console.log("[ROLEPOST DEBUG] 一致ロールID:", userRoleIds);
 
   // 既にONならOFF
   if (isActive(interaction.channelId, interaction.user.id)) {

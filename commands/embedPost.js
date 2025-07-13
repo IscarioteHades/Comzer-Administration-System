@@ -63,43 +63,53 @@ export function setInactive(channelId) {
  * -------------------------------------------------- */
 export async function execute(interaction) {
   const member = interaction.member;
-  // 利用可能な役職リスト（ROLE_CONFIGはindex.jsからimportする or 引数で渡す）
-  const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {}; // ←index.jsでbot.ROLE_CONFIG = ROLE_CONFIGしておく
+  const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {};
   const userRoleIds = Object.keys(ROLE_CONFIG).filter(rid => member.roles.cache.has(rid));
 
-  // 既にONの場合はOFFに
+  // 既にONならOFF
   if (isActive(interaction.channelId, interaction.user.id)) {
     setInactive(interaction.channelId);
-    await interaction.reply({ content: `役職発言モードを **OFF** にしました。`, ephemeral: true });
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({ content: `役職発言モードを **OFF** にしました。`, ephemeral: true });
+    }
     return;
   }
+
   if (userRoleIds.length === 0) {
-    await interaction.reply({ content: "役職ロールを保有していません。", ephemeral: true });
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({ content: "役職ロールを保有していません。", ephemeral: true });
+    }
     return;
   }
+
   if (userRoleIds.length > 1) {
-    // セレクトメニューで選ばせる
-    const row = new ActionRowBuilder().addComponents(
-      new SelectMenuBuilder()
-        .setCustomId(`rolepost-choose-${interaction.user.id}`)
-        .setPlaceholder('役職を選択してください')
-        .addOptions(userRoleIds.map(rid => ({
-          label: ROLE_CONFIG[rid].name,
-          value: rid,
-          emoji: '🟦',
-        })))
-    );
-    await interaction.reply({
-      content: 'どの役職で発言モードを有効にしますか？',
-      components: [row],
-      ephemeral: true,
-    });
+    if (!interaction.replied && !interaction.deferred) {
+      const row = new ActionRowBuilder().addComponents(
+        new SelectMenuBuilder()
+          .setCustomId(`rolepost-choose-${interaction.user.id}`)
+          .setPlaceholder('役職を選択してください')
+          .addOptions(userRoleIds.map(rid => ({
+            label: ROLE_CONFIG[rid].name,
+            value: rid,
+            emoji: '🟦',
+          })))
+      );
+      await interaction.reply({
+        content: 'どの役職で発言モードを有効にしますか？',
+        components: [row],
+        ephemeral: true,
+      });
+    }
     return;
   }
+
   // 1つだけ持ってる場合は即ON
   setActive(interaction.channelId, interaction.user.id, userRoleIds[0]);
-  await interaction.reply({ content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[userRoleIds[0]].name}）`, ephemeral: true });
+  if (!interaction.replied && !interaction.deferred) {
+    await interaction.reply({ content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[userRoleIds[0]].name}）`, ephemeral: true });
+  }
 }
+
 
 /* --------------------------------------------------
  * 4. Embed 生成ヘルパ

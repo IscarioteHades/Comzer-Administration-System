@@ -2,11 +2,9 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import axios from 'axios';
-export async function execute(interaction) {
-  if (interaction.replied || interaction.deferred) return;
 
 // 最終診断時刻の保持
-export let lastSelfCheck = new Date();
+let lastSelfCheck = new Date();
 export function updateLastSelfCheck() {
   lastSelfCheck = new Date();
 }
@@ -18,6 +16,7 @@ export const data = new SlashCommandBuilder()
 
 // コマンド実行本体
 export async function execute(interaction) {
+  if (interaction.replied || interaction.deferred) return;
   // JSTで表示
   const timeStr = lastSelfCheck.toLocaleString('ja-JP', { hour12: false, timeZone: 'Asia/Tokyo' });
 
@@ -55,6 +54,7 @@ export async function execute(interaction) {
     // PlayerDBのAPIは success:true のJSONが返る
     if (resp.data && resp.data.success) bedrockApi = '✅ Bedrock API：連携中';
   } catch {}
+
   if (interaction.replied || interaction.deferred) return;
   await interaction.reply({
     embeds: [
@@ -72,3 +72,6 @@ export async function execute(interaction) {
     ephemeral: true,
   });
 }
+
+// lastSelfCheckを外部から参照できるようexport
+export { lastSelfCheck };

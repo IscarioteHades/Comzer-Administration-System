@@ -639,7 +639,7 @@ if (interaction.isChatInputCommand()) {
 bot.on('messageCreate', async m => {
   if (m.author.bot) return;
 
-   if (embedPost.isActive(m.channel.id)) {
+   if (embedPost.isActive(m.channel.id, m.author.id)) {
     const member = m.member;
     const roleId = Object.keys(ROLE_CONFIG)
       .find(r => member.roles.cache.has(r));

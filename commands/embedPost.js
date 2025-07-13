@@ -1,6 +1,7 @@
 // commands/embedPost.js
 import {
   SlashCommandBuilder,
+  ActionRowBuilder,
   EmbedBuilder,
 } from 'discord.js';
 

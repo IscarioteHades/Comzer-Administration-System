@@ -609,13 +609,26 @@ bot.on('interactionCreate', async interaction => {
       
         } catch (error) {
           console.error("❌ interactionCreate handler error:", error);
- await interaction.followUp({
-   content: "エラーが発生しました。",
-   flags: MessageFlags.Ephemeral
- });
+          try {
+            if (interaction.deferred || interaction.replied) {
+              // すでに何らか応答済みなら followUp
+              await interaction.followUp({
+                content: "エラーが発生しました。",
+                flags: 1 << 6, // MessageFlags.Ephemeral
+              });
+            } else {
+              // まだ応答していなければ reply
+              await interaction.reply({
+                content: "エラーが発生しました。",
+                flags: 1 << 6,
+              });
+            }
+          } catch (notifyErr) {
+            console.error("❌ Failed to send error notification:", notifyErr);
+            // ここで更に throw せずに握りつぶすことで、
+            // イベントハンドラ外へのエラー漏出を防ぎます。
+          }
         }
-      });
-  
 
 
 // ── メッセージ処理ハンドラ

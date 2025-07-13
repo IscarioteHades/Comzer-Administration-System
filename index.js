@@ -46,7 +46,8 @@ const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
 const sheetId = SHEET_ID_RAW.match(/[-\w]{25,}/)?.[0] || SHEET_ID_RAW;
 const today = (new Date()).toISOString().slice(0,10);
 const prompt = extractionPrompt.replace("__TODAY__", today);
-const ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/5dwbifgYfsdWpZx/preview'; // ← 好みの外務省アイコン URL
+const DIPLOMAT_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/5dwbifgYfsdWpZx/preview'; // ← 外務省アイコン URL
+const MINISTER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/qGWt4rftd9ygKdi/preview'; // ← 閣僚議会議員アイコン URL
 
 // 1. 環境変数からロールIDリストを取得（例: 大臣・外交官どちらも）
 const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
@@ -58,19 +59,20 @@ const ROLE_CONFIG = {
     roleId,
     {
       name: '外交官(外務省 総合外務部職員)',
-      icon: ICON_URL,
+      icon: DIPLOMAT_ICON_URL,
       canDelete: [...DIPLOMAT_ROLE_IDS, ...MINISTER_ROLE_IDS], // 外交官・大臣どちらも削除可
     }
   ])),
   ...Object.fromEntries(MINISTER_ROLE_IDS.map(roleId => [
     roleId,
     {
-      name: '大臣',
-      icon: ICON_URL,
-      canDelete: MINISTER_ROLE_IDS, // 大臣だけ削除可
+      name: '閣僚議会議員',
+      icon: MINISTER_ICON_URL,
+      canDelete: MINISTER_ROLE_IDS, 
     }
   ])),
 };
+
 
 
 const webhooks = new Map();
@@ -609,6 +611,17 @@ bot.on('interactionCreate', async interaction => {
         console.error("❌ Failed to send error reply:", replyErr);
       }
     }
+
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
+      const selectedRoleId = interaction.values[0];
+      activeChannels.set(interaction.channelId, { userId: interaction.user.id, roleId: selectedRoleId });
+      await interaction.update({
+        content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[selectedRoleId].name}）`,
+        components: [],
+        ephemeral: true,
+      });
+      return;
+    }
   });
   
 
@@ -695,6 +708,14 @@ bot.on('messageCreate', async m => {
   for (const session of sessions.values()) {
     if (session.channelId === m.channel.id && session.userId === m.author.id) {
       session.lastAction = Date.now();
+      if (embedPost.isActive(m.channel.id)) {
+        const state = embedPost.getRoleId(m.channel.id);
+        // activeChannelsに状態保存→userId, roleIdで判定
+        if (state && state.userId === m.author.id) {
+          // ここでroleIdを使ってWebhook発言
+          const roleId = state.roleId;
+        }
+      }      
   
       if (session.step === 'mcid') {
         session.data.mcid = m.content.trim();

@@ -2,6 +2,7 @@
 import {
   SlashCommandBuilder,
   ActionRowBuilder,
+  SelectMenuBuilder,
   EmbedBuilder,
 } from 'discord.js';
 

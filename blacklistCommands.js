@@ -155,6 +155,7 @@ export async function handleCommands(interaction) {
   console.log('【権限チェック】hasRole:', hasRole);
 
   if (!hasRole) {
+      console.trace("権限エラーreply!");
     if (!interaction.replied && !interaction.deferred) {
   await interaction.reply({ content: "君はステージが低い。君のコマンドを受け付けると君のカルマが私の中に入って来て私が苦しくなる。(権限エラー)", ephemeral: true });
   }

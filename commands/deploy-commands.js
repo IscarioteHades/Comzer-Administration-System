@@ -10,9 +10,9 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 try {
   console.log('🔄  スラッシュコマンドを登録中...');
   await rest.put(
-    Routes.applicationGuildCommands(config.clientId, config.guildId),
-    { body: [rolepost.toJSON(), status.toJSON()] },
-  );
+  Routes.applicationGuildCommands(config.clientId, config.guildId),
+  { body: [rolepost.toJSON(), status.toJSON(), ...blacklistCommands.map(c => c.toJSON())] },
+);
   console.log('✅  登録完了！');
 } catch (err) {
   console.error(err);

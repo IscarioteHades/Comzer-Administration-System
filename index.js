@@ -56,20 +56,24 @@ const MINISTER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').filter(
 
 // 2. 各役職ロールごとの設定（ここに削除権限リストも入れる！）
  const ROLE_CONFIG = {
-   [DIPLOMAT_ID]: {
-     // ─── Embed 用 ─────────────────
-     embedName: '外交官(外務省 総合外務部職員)',
-     embedIcon: 'https://…/diplomat_embed.png',
-     // ─── Webhook 用 ────────────────
-     webhookName: 'コムザール連邦共和国 外務省',
-     webhookIcon: 'https://…/diplomat_webhook.png',
-   },
-   [MINISTER_ID]: {
-     embedName: '閣僚議会議員',
-     embedIcon: 'https://…/minister_embed.png',
-     webhookName: 'コムザール連邦共和国 大統領府',
-     webhookIcon: 'https://…/minister_webhook.png',
-   },
+   // ── 外交官ロールをまとめて
+   ...Object.fromEntries(
+     DIPLOMAT_ROLE_IDS.map(roleId => [ roleId, {
+       embedName:   '外交官(外務省 総合外務部職員)',
+       embedIcon:   DIPLOMAT_ICON_URL,
+       webhookName: 'コムザール連邦共和国 外務省',
+       webhookIcon: DIPLOMAT_ICON_URL,
+     }])
+   ),
+   // ── 閣僚議会議員ロールをまとめて
+   ...Object.fromEntries(
+     MINISTER_ROLE_IDS.map(roleId => [ roleId, {
+       embedName:   '閣僚議会議員',
+       embedIcon:   MINISTER_ICON_URL,
+       webhookName: 'コムザール連邦共和国 大統領府',
+       webhookIcon: MINISTER_ICON_URL,
+     }])
+   ),
  };
 
 export { ROLE_CONFIG };

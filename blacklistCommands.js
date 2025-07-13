@@ -135,15 +135,16 @@ export async function registerCommands(bot) {
 }
 
 // ----- コマンド実行時のハンドラ -----
+// ----- コマンド実行時のハンドラ -----
 export async function handleCommands(interaction) {
   if (!interaction.isChatInputCommand()) return false;
 
   const name = interaction.commandName;
 
-  // 権限チェック（環境変数 ROLLID_MINISTER に許可ロールIDをカンマ区切りで）
+  // 権限チェック
   const ALLOWED_ROLE_IDS = [
-  ...(process.env.ROLLID_MINISTER ? process.env.ROLLID_MINISTER.split(',') : []),
-  ...(process.env.ROLLID_DIPLOMAT ? process.env.ROLLID_DIPLOMAT.split(',') : []),
+    ...(process.env.ROLLID_MINISTER ? process.env.ROLLID_MINISTER.split(',') : []),
+    ...(process.env.ROLLID_DIPLOMAT ? process.env.ROLLID_DIPLOMAT.split(',') : []),
   ].map(x => x.trim()).filter(Boolean);
 
   const userRoleIds = interaction.member?.roles?.cache.map(r => String(r.id));
@@ -155,11 +156,19 @@ export async function handleCommands(interaction) {
   console.log('【権限チェック】hasRole:', hasRole);
 
   if (!hasRole) {
-      console.trace("権限エラーreply!");
+    console.trace("権限エラーreply!");
     if (!interaction.replied && !interaction.deferred) {
-  await interaction.reply({ content: "君はステージが低い。君のコマンドを受け付けると君のカルマが私の中に入って来て私が苦しくなる。(権限エラー)", ephemeral: true });
-  }
-  return true;
+      console.log("REPLY DEBUG", {
+        where: "権限チェック",
+        command: name,
+        reply: "権限エラー文言",
+        hasRole, ALLOWED_ROLE_IDS, userRoleIds,
+        replied: interaction.replied,
+        deferred: interaction.deferred
+      });
+      await interaction.reply({ content: "君はステージが低い。君のコマンドを受け付けると君のカルマが私の中に入って来て私が苦しくなる。(権限エラー)", ephemeral: true });
+    }
+    return true;
   }
 
   if (name === "add_country") {
@@ -167,14 +176,32 @@ export async function handleCommands(interaction) {
     const result = await addBlacklistEntry("Country", country, "");
     if (result.result === "duplicate") {
       if (!interaction.replied && !interaction.deferred) {
+        console.log("REPLY DEBUG", {
+          where: "add_country-duplicate",
+          reply: "既にブラックリスト(国)に登録",
+          replied: interaction.replied,
+          deferred: interaction.deferred
+        });
         await interaction.reply(`⚠️ 既にブラックリスト(国) に登録されています`);
       }
     } else if (result.result === "reactivated") {
       if (!interaction.replied && !interaction.deferred) {
-       await interaction.reply(`🟢 無効だった「${country}」を再有効化しました`);
+        console.log("REPLY DEBUG", {
+          where: "add_country-reactivated",
+          reply: "無効を再有効化",
+          replied: interaction.replied,
+          deferred: interaction.deferred
+        });
+        await interaction.reply(`🟢 無効だった「${country}」を再有効化しました`);
       }
-     } else if (result.result === "added") {
+    } else if (result.result === "added") {
       if (!interaction.replied && !interaction.deferred) {
+        console.log("REPLY DEBUG", {
+          where: "add_country-added",
+          reply: "ブラックリストに追加",
+          replied: interaction.replied,
+          deferred: interaction.deferred
+        });
         await interaction.reply(`✅ ブラックリスト(国) に「${country}」を追加しました`);
       }
     }
@@ -185,8 +212,20 @@ export async function handleCommands(interaction) {
     const country = interaction.options.getString("name", true).trim();
     const result = await removeBlacklistEntry("Country", country);
     if (result.result === "invalidated") {
+      console.log("REPLY DEBUG", {
+        where: "remove_country-invalidated",
+        reply: "無効化",
+        replied: interaction.replied,
+        deferred: interaction.deferred
+      });
       await interaction.reply(`🟣 「${country}」を無効化しました`);
     } else {
+      console.log("REPLY DEBUG", {
+        where: "remove_country-notfound",
+        reply: "存在しません",
+        replied: interaction.replied,
+        deferred: interaction.deferred
+      });
       await interaction.reply(`⚠️ ブラックリスト(国) に「${country}」は存在しません`);
     }
     return true;
@@ -196,10 +235,28 @@ export async function handleCommands(interaction) {
     const mcid = interaction.options.getString("mcid", true).trim();
     const result = await addBlacklistEntry("Player", mcid, "");
     if (result.result === "duplicate") {
+      console.log("REPLY DEBUG", {
+        where: "add_player-duplicate",
+        reply: "既にブラックリスト(プレイヤー)に登録",
+        replied: interaction.replied,
+        deferred: interaction.deferred
+      });
       await interaction.reply(`⚠️ 既にブラックリスト(プレイヤー) に登録されています`);
     } else if (result.result === "reactivated") {
+      console.log("REPLY DEBUG", {
+        where: "add_player-reactivated",
+        reply: "無効を再有効化",
+        replied: interaction.replied,
+        deferred: interaction.deferred
+      });
       await interaction.reply(`🟢 無効だった「${mcid}」を再有効化しました`);
     } else if (result.result === "added") {
+      console.log("REPLY DEBUG", {
+        where: "add_player-added",
+        reply: "ブラックリストに追加",
+        replied: interaction.replied,
+        deferred: interaction.deferred
+      });
       await interaction.reply(`✅ ブラックリスト(プレイヤー) に「${mcid}」を追加しました`);
     }
     return true;
@@ -209,8 +266,20 @@ export async function handleCommands(interaction) {
     const mcid = interaction.options.getString("mcid", true).trim();
     const result = await removeBlacklistEntry("Player", mcid);
     if (result.result === "invalidated") {
+      console.log("REPLY DEBUG", {
+        where: "remove_player-invalidated",
+        reply: "無効化",
+        replied: interaction.replied,
+        deferred: interaction.deferred
+      });
       await interaction.reply(`🟣 「${mcid}」を無効化しました`);
     } else {
+      console.log("REPLY DEBUG", {
+        where: "remove_player-notfound",
+        reply: "存在しません",
+        replied: interaction.replied,
+        deferred: interaction.deferred
+      });
       await interaction.reply(`⚠️ ブラックリスト(プレイヤー) に「${mcid}」は存在しません`);
     }
     return true;
@@ -221,6 +290,12 @@ export async function handleCommands(interaction) {
     const players = await getActiveBlacklist("Player");
     const countryList = countries.length > 0 ? countries.map(r => r.value).join('\n') : "なし";
     const playerList = players.length > 0 ? players.map(r => r.value).join('\n') : "なし";
+    console.log("REPLY DEBUG", {
+      where: "list_blacklist",
+      reply: "一覧送信",
+      replied: interaction.replied,
+      deferred: interaction.deferred
+    });
     await interaction.reply({
       embeds: [{
         title: "ブラックリスト一覧",
@@ -238,45 +313,83 @@ export async function handleCommands(interaction) {
   if (name === "delete_rolepost") {
     const messageId = interaction.options.getString("message_id", true);
     const channel = interaction.channel;
-  
     try {
       const msg = await channel.messages.fetch(messageId);
       if (msg.author.id !== interaction.client.user.id) {
+        console.log("REPLY DEBUG", {
+          where: "delete_rolepost-author",
+          reply: "Bot以外は不可",
+          replied: interaction.replied,
+          deferred: interaction.deferred
+        });
         await interaction.reply({ content: "コムザール行政システムが送信した役職発言のみ削除できます。", ephemeral: true });
         return true;
       }
-  
+
       const embed = msg.embeds[0];
       if (!embed || !embed.footer?.text) {
+        console.log("REPLY DEBUG", {
+          where: "delete_rolepost-embed",
+          reply: "役職発言以外不可",
+          replied: interaction.replied,
+          deferred: interaction.deferred
+        });
         await interaction.reply({ content: "役職発言以外は削除できません。", ephemeral: true });
         return true;
       }
       const match = embed.footer.text.match(/ROLE_ID:(\d+)/);
       if (!match) {
+        console.log("REPLY DEBUG", {
+          where: "delete_rolepost-roleid",
+          reply: "役職情報なし",
+          replied: interaction.replied,
+          deferred: interaction.deferred
+        });
         await interaction.reply({ content: "役職情報が付与されていない発言です。", ephemeral: true });
         return true;
       }
       const roleIdOfPost = match[1];
       const canDeleteRoleIds = ROLE_CONFIG[roleIdOfPost]?.canDelete || [];
       const userRoleIds = interaction.member.roles.cache.map(r => r.id);
-  
+
       const isAllowed = canDeleteRoleIds.some(rid => userRoleIds.includes(rid));
       if (!isAllowed) {
+        console.log("REPLY DEBUG", {
+          where: "delete_rolepost-authority",
+          reply: "削除権限なし",
+          replied: interaction.replied,
+          deferred: interaction.deferred
+        });
         await interaction.reply({ content: "あなたはこの役職発言を削除する権限がありません。", ephemeral: true });
         return true;
       }
-  
+
+      console.log("REPLY DEBUG", {
+        where: "delete_rolepost-success",
+        reply: "削除成功",
+        replied: interaction.replied,
+        deferred: interaction.deferred
+      });
       await msg.delete();
       await interaction.reply({ content: "メッセージを削除しました。", ephemeral: true });
     } catch (e) {
+      console.log("REPLY DEBUG", {
+        where: "delete_rolepost-catch",
+        reply: "削除例外",
+        replied: interaction.replied,
+        deferred: interaction.deferred
+      });
       await interaction.reply({ content: "メッセージが見つからないか、削除できませんでした。", ephemeral: true });
     }
     return true;
   }
 
   if (name === "status") {
+    // statusコマンド本体でreplyするためdebug不要
     await executeStatus(interaction);
     return true;
   }
+
   return false;
 }
+

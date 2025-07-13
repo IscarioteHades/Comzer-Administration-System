@@ -359,6 +359,15 @@ bot.on('interactionCreate', async interaction => {
       });
       return;
     }
+    // ① Chat-Input（Slash）コマンドのハンドル
+if (interaction.isChatInputCommand()) {
+  const cmd = bot.commands.get(interaction.commandName);
+  if (cmd) {
+    await cmd.execute(interaction);
+    return;
+  }
+}
+
 
     // ② 既存の SlashCommand／Button の処理
     const handled = await handleCommands(interaction);

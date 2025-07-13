@@ -90,15 +90,16 @@ export async function execute(interaction) {
 
   if (userRoleIds.length > 1) {
     const row = new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()  // ← discord.js v14以降はこっち推奨
-        .setCustomId(`rolepost-choose-${interaction.user.id}`)
-        .setPlaceholder('役職を選択してください')
-        .addOptions(userRoleIds.map(rid => ({
-          label: ROLE_CONFIG[rid].name,
-          value: rid,
-          emoji: '🟦',
-        })))
-    );
+  new StringSelectMenuBuilder()
+    .setCustomId(`rolepost-choose-${interaction.user.id}`)
+    .setPlaceholder('役職を選択してください')
+    .addOptions(userRoleIds.map(rid => ({
+      label: ROLE_CONFIG[rid].name,
+      value: rid,
+      emoji: '🟦',
+    })))
+);
+
     await interaction.editReply({
       content: 'どの役職で発言モードを有効にしますか？',
       components: [row],

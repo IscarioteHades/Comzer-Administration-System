@@ -2,6 +2,8 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import axios from 'axios';
+export async function execute(interaction) {
+  if (interaction.replied || interaction.deferred) return;
 
 // 最終診断時刻の保持
 export let lastSelfCheck = new Date();

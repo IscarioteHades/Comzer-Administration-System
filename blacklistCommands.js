@@ -141,35 +141,41 @@ export async function handleCommands(interaction) {
   const name = interaction.commandName;
 
   // 権限チェック（環境変数 ROLLID_MINISTER に許可ロールIDをカンマ区切りで）
-const ALLOWED_ROLE_IDS = [
+  const ALLOWED_ROLE_IDS = [
   ...(process.env.ROLLID_MINISTER ? process.env.ROLLID_MINISTER.split(',') : []),
   ...(process.env.ROLLID_DIPLOMAT ? process.env.ROLLID_DIPLOMAT.split(',') : []),
-].map(x => x.trim()).filter(Boolean);
+  ].map(x => x.trim()).filter(Boolean);
 
-const userRoleIds = interaction.member?.roles?.cache.map(r => String(r.id));
-const hasRole = ALLOWED_ROLE_IDS.map(r => String(r)).some(roleId => userRoleIds.includes(roleId));
+  const userRoleIds = interaction.member?.roles?.cache.map(r => String(r.id));
+  const hasRole = ALLOWED_ROLE_IDS.map(r => String(r)).some(roleId => userRoleIds.includes(roleId));
 
-console.log('【権限チェック】有効ロールID:', ALLOWED_ROLE_IDS);
-console.log('【権限チェック】ユーザーロールID:', userRoleIds);
-console.log('【権限チェック】member:', interaction.member);
-console.log('【権限チェック】hasRole:', hasRole);
+  console.log('【権限チェック】有効ロールID:', ALLOWED_ROLE_IDS);
+  console.log('【権限チェック】ユーザーロールID:', userRoleIds);
+  console.log('【権限チェック】member:', interaction.member);
+  console.log('【権限チェック】hasRole:', hasRole);
 
-if (!hasRole) {
+  if (!hasRole) {
+    if (!interaction.replied && !interaction.deferred) {
   await interaction.reply({ content: "君はステージが低い。君のコマンドを受け付けると君のカルマが私の中に入って来て私が苦しくなる。(権限エラー)", ephemeral: true });
+  }
   return true;
-}
-
-
+  }
 
   if (name === "add_country") {
     const country = interaction.options.getString("name", true).trim();
     const result = await addBlacklistEntry("Country", country, "");
     if (result.result === "duplicate") {
-      await interaction.reply(`⚠️ 既にブラックリスト(国) に登録されています`);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply(`⚠️ 既にブラックリスト(国) に登録されています`);
+      }
     } else if (result.result === "reactivated") {
-      await interaction.reply(`🟢 無効だった「${country}」を再有効化しました`);
-    } else if (result.result === "added") {
-      await interaction.reply(`✅ ブラックリスト(国) に「${country}」を追加しました`);
+      if (!interaction.replied && !interaction.deferred) {
+       await interaction.reply(`🟢 無効だった「${country}」を再有効化しました`);
+      }
+     } else if (result.result === "added") {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply(`✅ ブラックリスト(国) に「${country}」を追加しました`);
+      }
     }
     return true;
   }

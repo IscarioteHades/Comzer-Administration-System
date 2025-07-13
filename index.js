@@ -351,6 +351,20 @@ bot.on('interactionCreate', async interaction => {
   try {
     // 管理コマンド（ブラックリスト／status等）はhandleCommandsへ集約
     const handled = await handleCommands(interaction);
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.deferUpdate();
+      }
+      const selectedRoleId = interaction.values[0];
+      activeChannels.set(interaction.channelId, { userId: interaction.user.id, roleId: selectedRoleId });
+      await interaction.editReply({
+        content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[selectedRoleId].name}）`,
+        components: [],
+      });
+      return;
+    }
+
+
 if (handled) return;
 
 // 以下、handled == false時だけコマンド本体
@@ -615,19 +629,6 @@ if (interaction.isChatInputCommand()) {
       }
     }
 
-    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
-      if (!interaction.replied && !interaction.deferred) {
-    await interaction.deferUpdate(); // 3秒ルール対応（応答済みにする）
-  }
-      const selectedRoleId = interaction.values[0];
-      activeChannels.set(interaction.channelId, { userId: interaction.user.id, roleId: selectedRoleId });
-      await interaction.update({
-        content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[selectedRoleId].name}）`,
-        components: [],
-        ephemeral: true,
-      });
-      return;
-    }
   });
   
 

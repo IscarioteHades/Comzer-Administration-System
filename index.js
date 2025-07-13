@@ -6,6 +6,7 @@ import * as embedPost from './commands/embedPost.js';
 import axios from "axios";
 import http from "node:http";
 import { extractionPrompt } from "./prompts.js";
+import * as statusCommand from './commands/status.js';
 import fs from "node:fs";
 import {
   registerCommands,
@@ -136,8 +137,10 @@ const bot = new Client({
   ],
 });
 bot.ROLE_CONFIG = ROLE_CONFIG;
-bot.commands = new Collection([[embedPost.data.name, embedPost]]);
-
+bot.commands = new Collection([
+  [embedPost.data.name, embedPost],
+  [statusCommand.data.name, statusCommand]
+]);
 // ── Botがログインして準備完了したら一度だけblacklistCommands.js側を初期化
 bot.once("ready", async () => {
   console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);
@@ -175,8 +178,6 @@ async function endSession(id, status) {
   }
   sessions.delete(id);
 }
-
-import * as statusCommand from './commands/status.js';
 
 // ...既存のコマンド登録部分に追加
 bot.commands = new Collection([

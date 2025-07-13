@@ -346,7 +346,7 @@ for (const joiner of parsed.joiners) {
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
   try {
-    // ── ① selectMenu の処理（ON/OFF 切り替え）
+    // ① SelectMenuの処理（ON/OFF 切り替え）
     if (
       interaction.isStringSelectMenu() &&
       interaction.customId === 'rolepost-choose-role'
@@ -360,11 +360,11 @@ bot.on('interactionCreate', async interaction => {
       return;
     }
 
-    // ── ② SlashCommand / Button の既存処理
+    // ② 既存の SlashCommand／Button の処理
     const handled = await handleCommands(interaction);
     if (handled) return;
 
-    // ── ③ フォールバック返信（未対応の interaction）
+    // ③ フォールバック返信（未対応の interaction）
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
         content: "その操作にはまだ対応していません。",
@@ -608,28 +608,28 @@ bot.on('interactionCreate', async interaction => {
           }
       
         } catch (error) {
+          // ── try ブロックをここで閉じる ↑↑↑
           console.error("❌ interactionCreate handler error:", error);
+      
+          // エラー通知は reply⇔followUp を振り分け
           try {
             if (interaction.deferred || interaction.replied) {
-              // すでに何らか応答済みなら followUp
               await interaction.followUp({
                 content: "エラーが発生しました。",
-                flags: 1 << 6, // MessageFlags.Ephemeral
+                flags: 1 << 6, // Ephemeral
               });
             } else {
-              // まだ応答していなければ reply
               await interaction.reply({
                 content: "エラーが発生しました。",
                 flags: 1 << 6,
               });
             }
+            return true;
           } catch (notifyErr) {
             console.error("❌ Failed to send error notification:", notifyErr);
-            // ここで更に throw せずに握りつぶすことで、
-            // イベントハンドラ外へのエラー漏出を防ぎます。
           }
         }
-
+      });
 
 // ── メッセージ処理ハンドラ
 bot.on('messageCreate', async m => {

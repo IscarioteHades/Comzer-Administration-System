@@ -57,26 +57,32 @@ const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(
 const MINISTER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').filter(Boolean);
 
 // 2. 各役職ロールごとの設定（ここに削除権限リストも入れる！）
- const ROLE_CONFIG = {
-   // ── 外交官ロールをまとめて
-   ...Object.fromEntries(
-     DIPLOMAT_ROLE_IDS.map(roleId => [ roleId, {
-       embedName:   '外交官(外務省 総合外務部職員)',
-       embedIcon:   DIPLOMAT_ICON_URL,
-       webhookName: 'コムザール連邦共和国 外務省',
-       webhookIcon: DIPLOMAT_ICON_URL,
-     }])
-   ),
-   // ── 閣僚議会議員ロールをまとめて
-   ...Object.fromEntries(
-     MINISTER_ROLE_IDS.map(roleId => [ roleId, {
-       embedName:   '閣僚議会議員',
-       embedIcon:   MINISTER_ICON_URL,
-       webhookName: 'コムザール連邦共和国 大統領府',
-       webhookIcon: MINISTER_ICON_URL,
-     }])
-   ),
- };
+const ROLE_CONFIG = {
+  // ── 外交官ロールをまとめて
+  ...Object.fromEntries(
+    DIPLOMAT_ROLE_IDS.map(roleId => [ roleId, {
+      embedName:   '外交官(外務省 総合外務部職員)',
+      embedIcon:   DIPLOMAT_ICON_URL,
+      webhookName: 'コムザール連邦共和国 外務省',
+      webhookIcon: DIPLOMAT_ICON_URL,
+    }])
+  ),
+  // ── 閣僚議会議員ロールをまとめて
+  ...Object.fromEntries(
+    MINISTER_ROLE_IDS.map(roleId => [ roleId, {
+      embedName:   '閣僚議会議員',
+      embedIcon:   MINISTER_ICON_URL,
+      webhookName: 'コムザール連邦共和国 大統領府',
+      webhookIcon: MINISTER_ICON_URL,
+    }])
+  ),
+};
+  Object.entries(ROLE_CONFIG).forEach(([roleId, cfg]) => {
+    // embedName/embedIcon の内容を
+    // 従来の name/icon プロパティとしても参照できるようにする
+    cfg.name = cfg.embedName;
+    cfg.icon = cfg.embedIcon;
+  });
 
 export { ROLE_CONFIG };
 const webhooks = new Map();
@@ -359,6 +365,7 @@ bot.on('interactionCreate', async interaction => {
       });
       return;
     }
+    
     // ① Chat-Input（Slash）コマンドのハンドル
 if (interaction.isChatInputCommand()) {
   const cmd = bot.commands.get(interaction.commandName);
@@ -367,8 +374,6 @@ if (interaction.isChatInputCommand()) {
     return;
   }
 }
-
-
     // ② 既存の SlashCommand／Button の処理
     const handled = await handleCommands(interaction);
     if (handled) return;

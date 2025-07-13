@@ -15,40 +15,90 @@ export const data = new SlashCommandBuilder()
  * 2. チャンネルごとの ON / OFF 状態を保持
  *    true なら「役職発言モード ON」
  * -------------------------------------------------- */
-const activeChannels = new Set();
+// 複数ユーザー/チャンネルに対応
+// activeChannels: { [channelId]: { userId, roleId } }
+const activeChannels = new Map();
 
 /**
- * 現在 ON かどうかを返す
+ * 現在そのチャンネルでONかどうか
  * @param {string} channelId
+ * @param {string} userId
  * @returns {boolean}
  */
-export function isActive(channelId) {
-  return activeChannels.has(channelId);
+export function isActive(channelId, userId) {
+  const state = activeChannels.get(channelId);
+  return state && state.userId === userId;
 }
 
 /**
- * ON / OFF を切り替えて結果を返す
+ * そのチャンネルの現在の発言役職IDを返す
  * @param {string} channelId
- * @returns {boolean}  ← 切り替え後の状態（ON なら true）
+ * @returns {string|null}
  */
-export function toggle(channelId) {
-  if (activeChannels.has(channelId)) {
-    activeChannels.delete(channelId);
-    return false;
-  }
-  activeChannels.add(channelId);
-  return true;
+export function getRoleId(channelId) {
+  return activeChannels.get(channelId)?.roleId || null;
 }
+
+/**
+ * ON（役職ロール指定）でセット
+ * @param {string} channelId
+ * @param {string} userId
+ * @param {string} roleId
+ */
+export function setActive(channelId, userId, roleId) {
+  activeChannels.set(channelId, { userId, roleId });
+}
+
+/**
+ * OFF
+ * @param {string} channelId
+ */
+export function setInactive(channelId) {
+  activeChannels.delete(channelId);
+}
+
 
 /* --------------------------------------------------
  * 3. /rolepost 実行本体
  * -------------------------------------------------- */
 export async function execute(interaction) {
-  const on = toggle(interaction.channelId);
-  await interaction.reply({
-    content: `役職発言モードを **${on ? 'ON' : 'OFF'}** にしました。`,
-    ephemeral: true,
-  });
+  const member = interaction.member;
+  // 利用可能な役職リスト（ROLE_CONFIGはindex.jsからimportする or 引数で渡す）
+  const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {}; // ←index.jsでbot.ROLE_CONFIG = ROLE_CONFIGしておく
+  const userRoleIds = Object.keys(ROLE_CONFIG).filter(rid => member.roles.cache.has(rid));
+
+  // 既にONの場合はOFFに
+  if (isActive(interaction.channelId, interaction.user.id)) {
+    setInactive(interaction.channelId);
+    await interaction.reply({ content: `役職発言モードを **OFF** にしました。`, ephemeral: true });
+    return;
+  }
+  if (userRoleIds.length === 0) {
+    await interaction.reply({ content: "役職ロールを保有していません。", ephemeral: true });
+    return;
+  }
+  if (userRoleIds.length > 1) {
+    // セレクトメニューで選ばせる
+    const row = new ActionRowBuilder().addComponents(
+      new SelectMenuBuilder()
+        .setCustomId(`rolepost-choose-${interaction.user.id}`)
+        .setPlaceholder('役職を選択してください')
+        .addOptions(userRoleIds.map(rid => ({
+          label: ROLE_CONFIG[rid].name,
+          value: rid,
+          emoji: '🟦',
+        })))
+    );
+    await interaction.reply({
+      content: 'どの役職で発言モードを有効にしますか？',
+      components: [row],
+      ephemeral: true,
+    });
+    return;
+  }
+  // 1つだけ持ってる場合は即ON
+  setActive(interaction.channelId, interaction.user.id, userRoleIds[0]);
+  await interaction.reply({ content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[userRoleIds[0]].name}）`, ephemeral: true });
 }
 
 /* --------------------------------------------------
@@ -58,12 +108,14 @@ export async function execute(interaction) {
 export function makeEmbed(content, roleId, ROLE_CONFIG, attachmentURL = null) {
   const embed = new EmbedBuilder()
     .setAuthor({
-      name: '外交官 (外務省 総合外務部職員)',      // ← 肩書きはここで固定
+      name: ROLE_CONFIG[roleId].name,
       iconURL: ROLE_CONFIG[roleId].icon,
     })
     .setDescription(content)
-    .setColor(0x3498db);
+    .setColor(0x3498db)
+    .setFooter({ text: `ROLE_ID:${roleId}` });
 
   if (attachmentURL) embed.setImage(attachmentURL);
   return embed;
 }
+

@@ -179,12 +179,6 @@ async function endSession(id, status) {
   sessions.delete(id);
 }
 
-// ...既存のコマンド登録部分に追加
-bot.commands = new Collection([
-  [embedPost.data.name, embedPost],
-  [statusCommand.data.name, statusCommand], // ←これを追加
-]);
-
 // ステータスメッセージ更新＆診断時刻管理
 setInterval(() => {
   const jstTime = new Date().toLocaleString("ja-JP", { hour12: false });

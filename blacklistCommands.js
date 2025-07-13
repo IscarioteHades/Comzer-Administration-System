@@ -5,6 +5,7 @@ import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v10";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { execute as executeStatus } from "./commands/status.js";
+import { ROLE_CONFIG } from "./index.js";
 
 // Googleシート設定
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -88,6 +89,12 @@ export async function isBlacklistedCountry(country) {
 
 // ----- コマンド定義 -----
 export const commands = [
+  new SlashCommandBuilder()
+  .setName("delete_rolepost")
+  .setDescription("役職発言（Bot発言）の削除")
+  .addStringOption(o =>
+    o.setName("message_id").setDescription("削除するメッセージのID").setRequired(true)
+  ),
   new SlashCommandBuilder()
     .setName("add_country")
     .setDescription("ブラックリスト(国)に追加")
@@ -207,6 +214,45 @@ if (!hasRole) {
       }],
       ephemeral: true
     });
+    return true;
+  }
+
+  if (name === "delete_rolepost") {
+    const messageId = interaction.options.getString("message_id", true);
+    const channel = interaction.channel;
+  
+    try {
+      const msg = await channel.messages.fetch(messageId);
+      if (msg.author.id !== interaction.client.user.id) {
+        await interaction.reply({ content: "コムザール行政システムが送信した役職発言のみ削除できます。", ephemeral: true });
+        return true;
+      }
+  
+      const embed = msg.embeds[0];
+      if (!embed || !embed.footer?.text) {
+        await interaction.reply({ content: "役職発言以外は削除できません。", ephemeral: true });
+        return true;
+      }
+      const match = embed.footer.text.match(/ROLE_ID:(\d+)/);
+      if (!match) {
+        await interaction.reply({ content: "役職情報が付与されていない発言です。", ephemeral: true });
+        return true;
+      }
+      const roleIdOfPost = match[1];
+      const canDeleteRoleIds = ROLE_CONFIG[roleIdOfPost]?.canDelete || [];
+      const userRoleIds = interaction.member.roles.cache.map(r => r.id);
+  
+      const isAllowed = canDeleteRoleIds.some(rid => userRoleIds.includes(rid));
+      if (!isAllowed) {
+        await interaction.reply({ content: "あなたはこの役職発言を削除する権限がありません。", ephemeral: true });
+        return true;
+      }
+  
+      await msg.delete();
+      await interaction.reply({ content: "メッセージを削除しました。", ephemeral: true });
+    } catch (e) {
+      await interaction.reply({ content: "メッセージが見つからないか、削除できませんでした。", ephemeral: true });
+    }
     return true;
   }
 

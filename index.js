@@ -352,13 +352,20 @@ bot.on('interactionCreate', async interaction => {
     // 管理コマンド（ブラックリスト／status等）はhandleCommandsへ集約
     const handled = await handleCommands(interaction);
 if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
-    console.log('[DEBUG] セレクトメニュー分岐到達', interaction.customId);
+  console.log('[DEBUG] セレクトメニュー分岐到達', interaction.customId);
+
   const selectedRoleId = interaction.values[0];
   embedPost.setActive(interaction.channelId, interaction.user.id, selectedRoleId);
-  await interaction.update({
-    content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[selectedRoleId].name}）`,
-    components: [],
-  });
+
+  try {
+    await interaction.update({
+      content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[selectedRoleId].name}）`,
+      components: [],
+    });
+  } catch (err) {
+    console.error('[ERROR] interaction.update failed', err);
+    // 必要ならここでエラー通知
+  }
   return;
 }
 

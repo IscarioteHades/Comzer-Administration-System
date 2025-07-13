@@ -55,41 +55,44 @@ const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(
 const MINISTER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').filter(Boolean);
 
 // 2. 各役職ロールごとの設定（ここに削除権限リストも入れる！）
-const ROLE_CONFIG = {
-  ...Object.fromEntries(DIPLOMAT_ROLE_IDS.map(roleId => [
-    roleId,
-    {
-      name: '外交官(外務省 総合外務部職員)',
-      icon: DIPLOMAT_ICON_URL,
-      canDelete: [...DIPLOMAT_ROLE_IDS, ...MINISTER_ROLE_IDS], // 外交官・大臣どちらも削除可
-    }
-  ])),
-  ...Object.fromEntries(MINISTER_ROLE_IDS.map(roleId => [
-    roleId,
-    {
-      name: '閣僚議会議員',
-      icon: MINISTER_ICON_URL,
-      canDelete: MINISTER_ROLE_IDS, 
-    }
-  ])),
-};
+ const ROLE_CONFIG = {
+   [DIPLOMAT_ID]: {
+     // ─── Embed 用 ─────────────────
+     embedName: '外交官(外務省 総合外務部職員)',
+     embedIcon: 'https://…/diplomat_embed.png',
+     // ─── Webhook 用 ────────────────
+     webhookName: 'コムザール連邦共和国 外務省',
+     webhookIcon: 'https://…/diplomat_webhook.png',
+   },
+   [MINISTER_ID]: {
+     embedName: '閣僚議会議員',
+     embedIcon: 'https://…/minister_embed.png',
+     webhookName: 'コムザール連邦共和国 大統領府',
+     webhookIcon: 'https://…/minister_webhook.png',
+   },
+   // 大統領ロールも同様に追加
+   [PRESIDENT_ID]: {
+     embedName: '大統領',
+     embedIcon: 'https://…/president_embed.png',
+     webhookName: 'コムザール連邦共和国 大統領府',
+     webhookIcon: 'https://…/president_webhook.png',
+   },
+ };
 
 export { ROLE_CONFIG };
-
 const webhooks = new Map();
 async function getOrCreateHook(channel, roleId) {
   const key = `${channel.id}:${roleId}`;
   if (webhooks.has(key)) return webhooks.get(key);
 
-  // 同名 Webhook が既にあるか？
-  const whs = await channel.fetchWebhooks();
-  const existing = whs.find(w => w.name === 'コムザール連邦共和国 外務省');
-
+  const webhookName = ROLE_CONFIG[roleId].webhookName;
+  const webhookIcon = ROLE_CONFIG[roleId].webhookIcon;
+  const existing = whs.find(w => w.name === webhookName);
   const hook = existing
     ? new WebhookClient({ id: existing.id, token: existing.token })
     : await channel.createWebhook({
-        name: 'コムザール連邦共和国 外務省',
-        avatar: ROLE_CONFIG[roleId].icon,
+        name: webhookName,
+        avatar: webhookIcon,
       });
 
   webhooks.set(key, hook);
@@ -343,23 +346,22 @@ for (const joiner of parsed.joiners) {
 
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
-  try {
-    // 管理コマンド（ブラックリスト／status等）はhandleCommandsへ集約
-    const handled = await handleCommands(interaction);
-if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
-  const selectedRoleId = interaction.values[0];
-  embedPost.setActive(interaction.channelId, interaction.user.id, selectedRoleId);  // ←これだけ！
-  await interaction.update({
-    content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[selectedRoleId].name}）`,
-    components: [],
-  });
-  return;
-}
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId === 'rolepost-choose-role'
+  ) {
+    const roleId = interaction.values[0];
+    embedPost.setActive(interaction.channelId, interaction.user.id, roleId);
+    await interaction.update({
+      content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[roleId].embedName}）`,
+      components: [],
+    });
+    return;
+  }
 
-
-
-
-if (handled) return;
+  // ── ② 既存の SlashCommand／Button の処理
+  const handled = await handleChatInputCommand(interaction);
+  if (handled) return;
 
 // 以下、handled == false時だけコマンド本体
 if (interaction.isChatInputCommand()) {

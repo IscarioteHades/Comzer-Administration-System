@@ -346,38 +346,31 @@ for (const joiner of parsed.joiners) {
 
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
-  if (
-    interaction.isStringSelectMenu() &&
-    interaction.customId === 'rolepost-choose-role'
-  ) {
-    const roleId = interaction.values[0];
-    embedPost.setActive(interaction.channelId, interaction.user.id, roleId);
-    await interaction.update({
-      content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[roleId].embedName}）`,
-      components: [],
-    });
-    return;
-  }
-
-  // ── ② 既存の SlashCommand／Button の処理
-  const handled = await handleChatInputCommand(interaction);
-  if (handled) return;
-
-// 以下、handled == false時だけコマンド本体
-if (interaction.isChatInputCommand()) {
-  const cmd = bot.commands.get(interaction.commandName);
-  if (cmd) {
-    await cmd.execute(interaction);
-    return;
-      }
-      // ★ コマンドが存在しない場合のみfallback
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          content: "その操作にはまだ対応していません。",
-          ephemeral: true
-        });
-      }
+  try {
+    // ── ① selectMenu の処理（ON/OFF 切り替え）
+    if (
+      interaction.isStringSelectMenu() &&
+      interaction.customId === 'rolepost-choose-role'
+    ) {
+      const roleId = interaction.values[0];
+      embedPost.setActive(interaction.channelId, interaction.user.id, roleId);
+      await interaction.update({
+        content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[roleId].embedName}）`,
+        components: [],
+      });
       return;
+    }
+
+    // ── ② SlashCommand / Button の既存処理
+    const handled = await handleChatInputCommand(interaction);
+    if (handled) return;
+
+    // ── ③ フォールバック返信（未対応の interaction）
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: "その操作にはまだ対応していません。",
+        ephemeral: true,
+      });
     }
 
   
@@ -608,27 +601,27 @@ if (interaction.isChatInputCommand()) {
       }
   
       // fallback: 未対応の interaction 種別（返信しないと「考え中...」になる）
-if (!interaction.replied && !interaction.deferred) {
-  await interaction.reply({               
-    content: "その操作にはまだ対応していません。",
-    ephemeral: true                      
-  });                                    
-}
-    } catch (error) {
-      console.error("❌ interactionCreate handler error:", error);
-      try {
-        if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({ content: "エラーが発生しました。", ephemeral: true });
-        } else {
-          await interaction.reply({ content: "エラーが発生しました。", ephemeral: true });
-            return true; 
+        if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({
+              content: "その操作にはまだ対応していません。",
+              ephemeral: true,   // ←末尾にカンマを入れても OK
+           });
+          }
+      
+        } catch (error) {
+          console.error("❌ interactionCreate handler error:", error);
+          try {
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp({ content: "エラーが発生しました。" });
+            } else {
+              await interaction.reply({ content: "エラーが発生しました。" });
+            }
+            return true;
+          } catch (replyErr) {
+            console.error("❌ Failed to send error reply:", replyErr);
+          }
         }
-      } catch (replyErr) {
-        console.error("❌ Failed to send error reply:", replyErr);
-      }
-    }
-
-  });
+      });
   
 
 

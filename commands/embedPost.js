@@ -121,17 +121,21 @@ const row = new ActionRowBuilder().addComponents(
  * 4. Embed 生成ヘルパ
  *    画像が 1 枚あればプレビューに使う（任意）
  * -------------------------------------------------- */
+// commands/embedPost.js
+
 export function makeEmbed(content, roleId, ROLE_CONFIG, attachmentURL = null) {
-  const embed = new EmbedBuilder()
+  return new EmbedBuilder()
     .setAuthor({
-      name: ROLE_CONFIG[roleId].name,
-      iconURL: ROLE_CONFIG[roleId].icon,
+      name: ROLE_CONFIG[roleId].embedName,   // ← embedName を使う
+      iconURL: ROLE_CONFIG[roleId].embedIcon // ← embedIcon を使う
     })
     .setDescription(content)
     .setColor(0x3498db)
-    .setFooter({ text: `ROLE_ID:${roleId}` });
+    .setFooter({ text: `ROLE_ID:${roleId}` })
+    .setThumbnail(ROLE_CONFIG[roleId].embedIcon) // 必要ならサムネも
+    .setImage(attachmentURL || undefined);        // 画像も保持
 
-  if (attachmentURL) embed.setImage(attachmentURL);
-  return embed;
+  // ※Attachment がない場合は setImage は呼ばない
 }
+
 

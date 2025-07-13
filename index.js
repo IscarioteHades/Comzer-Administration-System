@@ -353,10 +353,10 @@ for (const joiner of parsed.joiners) {
 bot.on('interactionCreate', async interaction => {
   try {
     // ① SelectMenuの処理（ON/OFF 切り替え）
-    if (
-      interaction.isStringSelectMenu() &&
-      interaction.customId === 'rolepost-choose-role'
-    ) {
+   if (
+     interaction.isStringSelectMenu() &&
+     interaction.customId.startsWith('rolepost-choose-')
+   ) {
       const roleId = interaction.values[0];
       embedPost.setActive(interaction.channelId, interaction.user.id, roleId);
       await interaction.update({

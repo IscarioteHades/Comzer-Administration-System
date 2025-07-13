@@ -608,12 +608,12 @@ if (interaction.isChatInputCommand()) {
       }
   
       // fallback: 未対応の interaction 種別（返信しないと「考え中...」になる）
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          content: "その操作にはまだ対応していません。",
-          ephemeral: true
-        });
-      }
+if (!interaction.replied && !interaction.deferred) {
+  await interaction.reply({               
+    content: "その操作にはまだ対応していません。",
+    ephemeral: true                      
+  });                                    
+}
     } catch (error) {
       console.error("❌ interactionCreate handler error:", error);
       try {

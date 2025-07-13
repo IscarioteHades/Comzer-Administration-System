@@ -132,7 +132,6 @@ export function makeEmbed(content, roleId, ROLE_CONFIG, attachmentURL = null) {
     .setDescription(content)
     .setColor(0x3498db)
     .setFooter({ text: `ROLE_ID:${roleId}` })
-    .setThumbnail(ROLE_CONFIG[roleId].embedIcon) // 必要ならサムネも
     .setImage(attachmentURL || undefined);        // 画像も保持
 
   // ※Attachment がない場合は setImage は呼ばない

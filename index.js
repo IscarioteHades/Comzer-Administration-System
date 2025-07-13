@@ -636,6 +636,14 @@ bot.on('messageCreate', async m => {
 
    if (embedPost.isActive(m.channel.id, m.author.id)) {
     const member = m.member;
+
+         // 臨時デバッグ用コード。ここから。
+    console.log("[ROLEPOST MSG] stored roleId:", embedPost.getRoleId(m.channel.id, m.author.id));
+    console.log("[ROLEPOST MSG] auto-pick roleId:", Object
+      .keys(ROLE_CONFIG)
+      .find(rid => member.roles.cache.has(rid)));
+    //臨時デバッグ用コード。ここまで。
+     
     const roleId = Object.keys(ROLE_CONFIG)
       .find(r => member.roles.cache.has(r));
     if (roleId) {

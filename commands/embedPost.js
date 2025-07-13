@@ -64,6 +64,8 @@ export function setInactive(channelId) {
  * 3. /rolepost 実行本体
  * -------------------------------------------------- */
 export async function execute(interaction) {
+  if (interaction.replied || interaction.deferred) return;
+  await interaction.deferReply({ ephemeral: true });
   const member = interaction.member;
   const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {};
 

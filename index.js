@@ -589,6 +589,9 @@ if (interaction.isChatInputCommand()) {
   
       // --- セレクトメニュー処理 ---
       if (interaction.isStringSelectMenu()) {
+          if (interaction.customId.startsWith('rolepost-choose-')) {
+    return;
+  }
         const parts = interaction.customId.split('-');
         const type = parts[0];
         const sessionId = parts.slice(1).join('-');

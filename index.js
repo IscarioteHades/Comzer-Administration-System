@@ -70,13 +70,6 @@ const MINISTER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').filter(
      webhookName: 'コムザール連邦共和国 大統領府',
      webhookIcon: 'https://…/minister_webhook.png',
    },
-   // 大統領ロールも同様に追加
-   [PRESIDENT_ID]: {
-     embedName: '大統領',
-     embedIcon: 'https://…/president_embed.png',
-     webhookName: 'コムザール連邦共和国 大統領府',
-     webhookIcon: 'https://…/president_webhook.png',
-   },
  };
 
 export { ROLE_CONFIG };

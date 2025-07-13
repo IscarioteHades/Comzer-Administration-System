@@ -315,7 +315,7 @@ export async function handleCommands(interaction) {
     const channel = interaction.channel;
     try {
       const msg = await channel.messages.fetch(messageId);
-      if (msg.author.id !== interaction.client.user.id) {
+      if (!msg.webhookId) {
         console.log("REPLY DEBUG", {
           where: "delete_rolepost-author",
           reply: "Bot以外は不可",

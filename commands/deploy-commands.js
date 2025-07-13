@@ -2,7 +2,7 @@ import { REST, Routes } from 'discord.js';
 import { data as rolepost } from './embedPost.js';
 import { data as status } from './status.js';
 import config from '../config.json' with { type: 'json' };
-import { data as deleteRolepost } from '../blacklistCommands.js';
+import { commands as blacklistCommands } from '../blacklistCommands.js';
 
 
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);

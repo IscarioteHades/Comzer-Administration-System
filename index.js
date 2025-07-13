@@ -684,12 +684,9 @@ bot.on('messageCreate', async m => {
         });
 
         await m.delete().catch(() => {});
-      } catch (err) {
-        console.error('[rolepost] resend error:', err);
-      } finally {
-        // 送信成功・失敗にかかわらず state をクリア
-        embedPost.setInactive(m.channel.id, m.author.id);
-      }
+ } catch (err) {
+   console.error('[rolepost] resend error:', err);
+ }
       return;
     }
   }

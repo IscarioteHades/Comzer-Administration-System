@@ -19,5 +19,5 @@ try {
 }
 await rest.put(
   Routes.applicationGuildCommands(config.clientId, config.guildId),
-  { body: [rolepost.toJSON(), status.toJSON(), deleteRolepost.toJSON()] },
+  { body: [rolepost.toJSON(), status.toJSON(), ...blacklistCommands.map(c => c.toJSON())] },
 );

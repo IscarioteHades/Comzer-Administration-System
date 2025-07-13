@@ -342,7 +342,7 @@ if (name === "delete_rolepost") {
     }
 
     // 3) 実行者がその roleId を持っているかチェック
-    if (!interaction.member.roles.cache.has(roleIdOfEmbed)) {
+    if (!executorRoleIds.includes(roleIdOfEmbed)) {
       await interaction.reply({
         content: "あなたにはこの役職発言を削除する権限がありません。",
         ephemeral: true
@@ -390,7 +390,7 @@ if (name === "delete_rolepost") {
       }
       const roleIdOfPost = match[1];
       const canDeleteRoleIds = ROLE_CONFIG[roleIdOfPost]?.canDelete || [];
-      const userRoleIds = interaction.member.roles.cache.map(r => r.id);
+      const executorRoleIds = interaction.member.roles.cache.map(r => r.id);
 
       const isAllowed = canDeleteRoleIds.some(rid => userRoleIds.includes(rid));
       if (!isAllowed) {

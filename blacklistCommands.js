@@ -147,9 +147,10 @@ const hasRole = ALLOWED_ROLE_IDS.some(roleId =>
 );
 if (!hasRole) {
   await interaction.reply({ content: "君はステージが低い。君のコマンドを受け付けると君のカルマが私の中に入って来て私が苦しくなる。(権限エラー)", ephemeral: true });
-  }
-  return true;
+  return true; // ★ここ
 }
+
+
 
   if (name === "add_country") {
     const country = interaction.options.getString("name", true).trim();

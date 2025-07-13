@@ -636,16 +636,14 @@ bot.on('messageCreate', async m => {
 
    if (embedPost.isActive(m.channel.id, m.author.id)) {
     const member = m.member;
-
-         // 臨時デバッグ用コード。ここから。
-    console.log("[ROLEPOST MSG] stored roleId:", embedPost.getRoleId(m.channel.id, m.author.id));
-    console.log("[ROLEPOST MSG] auto-pick roleId:", Object
-      .keys(ROLE_CONFIG)
-      .find(rid => member.roles.cache.has(rid)));
-    //臨時デバッグ用コード。ここまで。
      
-    const roleId = Object.keys(ROLE_CONFIG)
+  // ドロップダウンで保存された roleId を最優先
+  let roleId = embedPost.getRoleId(m.channel.id, m.author.id);
+  // state がなければ、メンバーのロール一覧からフォールバック
+  if (!roleId) {
+    roleId = Object.keys(ROLE_CONFIG)
       .find(r => member.roles.cache.has(r));
+  }
     if (roleId) {
       try {
         const hook = await getOrCreateHook(m.channel, roleId);
@@ -671,8 +669,11 @@ bot.on('messageCreate', async m => {
         await m.delete().catch(() => {});
       } catch (err) {
         console.error('[rolepost] resend error:', err);
+      } finally {
+        // 送信成功・失敗にかかわらず state をクリア
+        embedPost.setInactive(m.channel.id, m.author.id);
       }
-      return; // ← 役職処理したら残りのロジックはスキップ
+      return;
     }
   }
   console.log('parentId:', m.channel.parentId, '（型：', typeof m.channel.parentId, '）');

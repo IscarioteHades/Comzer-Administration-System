@@ -90,7 +90,7 @@ export async function execute(interaction) {
 
   if (userRoleIds.length > 1) {
     const row = new ActionRowBuilder().addComponents(
-      new SelectMenuBuilder()
+      new StringSelectMenuBuilder()  // ← discord.js v14以降はこっち推奨
         .setCustomId(`rolepost-choose-${interaction.user.id}`)
         .setPlaceholder('役職を選択してください')
         .addOptions(userRoleIds.map(rid => ({

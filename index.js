@@ -359,7 +359,7 @@ bot.on('interactionCreate', async interaction => {
     }
 
     // ── ② SlashCommand / Button の既存処理
-    const handled = await handleChatInputCommand(interaction);
+    const handled = await handleCommands(interaction);
     if (handled) return;
 
     // ── ③ フォールバック返信（未対応の interaction）

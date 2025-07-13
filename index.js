@@ -73,7 +73,7 @@ const ROLE_CONFIG = {
   ])),
 };
 
-
+export { ROLE_CONFIG };
 
 const webhooks = new Map();
 async function getOrCreateHook(channel, roleId) {

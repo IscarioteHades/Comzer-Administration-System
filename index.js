@@ -350,13 +350,14 @@ bot.on('interactionCreate', async interaction => {
   try {
     // 管理コマンド（ブラックリスト／status等）はhandleCommandsへ集約
     const handled = await handleCommands(interaction);
-    if (handled) return;
+if (handled) return;
 
-    if (interaction.isChatInputCommand()) {
-      const cmd = bot.commands.get(interaction.commandName);
-      if (cmd) {
-        await cmd.execute(interaction);
-        return;
+// 以下、handled == false時だけコマンド本体
+if (interaction.isChatInputCommand()) {
+  const cmd = bot.commands.get(interaction.commandName);
+  if (cmd) {
+    await cmd.execute(interaction);
+    return;
       }
       // ★ コマンドが存在しない場合のみfallback
       if (!interaction.replied && !interaction.deferred) {

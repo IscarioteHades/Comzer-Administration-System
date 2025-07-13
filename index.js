@@ -1,4 +1,3 @@
-import { WebhookClient } from 'discord.js';
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const config = require("./config.json"); // JSONを require で読み込む方法 :contentReference[oaicite:1]{index=1}
@@ -16,7 +15,10 @@ import {
   isBlacklistedPlayer,
 } from "./blacklistCommands.js";
 import {
+  WebhookClient,
   Client,
+  InteractionResponseType,
+  MessageFlags,
   Collection,
   Events,
   GatewayIntentBits,
@@ -607,16 +609,10 @@ bot.on('interactionCreate', async interaction => {
       
         } catch (error) {
           console.error("❌ interactionCreate handler error:", error);
-          try {
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp({ content: "エラーが発生しました。" });
-            } else {
-              await interaction.reply({ content: "エラーが発生しました。" });
-            }
-            return true;
-          } catch (replyErr) {
-            console.error("❌ Failed to send error reply:", replyErr);
-          }
+ await interaction.followUp({
+   content: "エラーが発生しました。",
+   flags: MessageFlags.Ephemeral
+ });
         }
       });
   

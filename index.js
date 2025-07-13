@@ -351,19 +351,16 @@ bot.on('interactionCreate', async interaction => {
   try {
     // 管理コマンド（ブラックリスト／status等）はhandleCommandsへ集約
     const handled = await handleCommands(interaction);
-  if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
-  if (!interaction.replied && !interaction.deferred) {
-    await interaction.deferUpdate();
-  }
+if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
   const selectedRoleId = interaction.values[0];
-  // ★修正ここ
   embedPost.setActive(interaction.channelId, interaction.user.id, selectedRoleId);
-  await interaction.editReply({
+  await interaction.update({
     content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[selectedRoleId].name}）`,
     components: [],
   });
   return;
 }
+
 
 
 if (handled) return;

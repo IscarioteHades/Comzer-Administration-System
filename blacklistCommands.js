@@ -310,22 +310,62 @@ export async function handleCommands(interaction) {
     return true;
   }
 
-  if (name === "delete_rolepost") {
-    const messageId = interaction.options.getString("message_id", true);
-    const channel = interaction.channel;
-    try {
-      const msg = await channel.messages.fetch(messageId);
-      if (!msg.webhookId) {
-        console.log("REPLY DEBUG", {
-          where: "delete_rolepost-author",
-          reply: "Bot以外は不可",
-          replied: interaction.replied,
-          deferred: interaction.deferred
-        });
-        await interaction.reply({ content: "コムザール行政システムが送信した役職発言のみ削除できます。", ephemeral: true });
-        return true;
-      }
+  // blacklistCommands.js
+if (name === "delete_rolepost") {
+  const messageId = interaction.options.getString("message_id", true);
+  const channel   = interaction.channel;
 
+  try {
+    const msg = await channel.messages.fetch(messageId);
+
+    // 1) Webhook 経由でないメッセージは削除不可
+    if (!msg.webhookId) {
+      await interaction.reply({ 
+        content: "コムザール行政システムが送信した役職発言のみ削除できます。", 
+        ephemeral: true 
+      });
+      return true;
+    }
+
+    // 2) Embed の author.name (= embedName) から roleId を逆引き
+    const embed = msg.embeds[0];
+    const authorName = embed.author?.name;
+    const roleIdOfEmbed = Object.keys(ROLE_CONFIG).find(
+      rid => ROLE_CONFIG[rid].embedName === authorName
+    );
+    if (!roleIdOfEmbed) {
+      await interaction.reply({
+        content: "このメッセージは役職発言ではないようです。",
+        ephemeral: true
+      });
+      return true;
+    }
+
+    // 3) 実行者がその roleId を持っているかチェック
+    if (!interaction.member.roles.cache.has(roleIdOfEmbed)) {
+      await interaction.reply({
+        content: "あなたにはこの役職発言を削除する権限がありません。",
+        ephemeral: true
+      });
+      return true;
+    }
+
+    // 4) 削除実行
+    await msg.delete();
+    await interaction.reply({
+      content: "役職発言を削除しました。",
+      ephemeral: true
+    });
+
+  } catch (e) {
+    await interaction.reply({
+      content: "指定のメッセージが見つからないか、削除できませんでした。",
+      ephemeral: true
+    });
+  }
+
+  return true;
+}
       const embed = msg.embeds[0];
       if (!embed || !embed.footer?.text) {
         console.log("REPLY DEBUG", {

@@ -48,19 +48,30 @@ const today = (new Date()).toISOString().slice(0,10);
 const prompt = extractionPrompt.replace("__TODAY__", today);
 const ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/5dwbifgYfsdWpZx/preview'; // ← 好みの外務省アイコン URL
 
-// 1. 環境変数からロールIDリストを取得
-const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',');
+// 1. 環境変数からロールIDリストを取得（例: 大臣・外交官どちらも）
+const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
+const MINISTER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').filter(Boolean);
 
-// 2. ROLE_CONFIGを動的生成
-const ROLE_CONFIG = Object.fromEntries(
-  DIPLOMAT_ROLE_IDS.filter(Boolean).map(roleId => [
+// 2. 各役職ロールごとの設定（ここに削除権限リストも入れる！）
+const ROLE_CONFIG = {
+  ...Object.fromEntries(DIPLOMAT_ROLE_IDS.map(roleId => [
     roleId,
     {
       name: '外交官(外務省 総合外務部職員)',
       icon: ICON_URL,
+      canDelete: [...DIPLOMAT_ROLE_IDS, ...MINISTER_ROLE_IDS], // 外交官・大臣どちらも削除可
     }
-  ])
-);
+  ])),
+  ...Object.fromEntries(MINISTER_ROLE_IDS.map(roleId => [
+    roleId,
+    {
+      name: '大臣',
+      icon: ICON_URL,
+      canDelete: MINISTER_ROLE_IDS, // 大臣だけ削除可
+    }
+  ])),
+};
+
 
 const webhooks = new Map();
 async function getOrCreateHook(channel, roleId) {

@@ -606,6 +606,7 @@ bot.on('interactionCreate', async interaction => {
           await interaction.followUp({ content: "エラーが発生しました。", ephemeral: true });
         } else {
           await interaction.reply({ content: "エラーが発生しました。", ephemeral: true });
+            return true; 
         }
       } catch (replyErr) {
         console.error("❌ Failed to send error reply:", replyErr);

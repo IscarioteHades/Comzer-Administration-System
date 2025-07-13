@@ -135,7 +135,7 @@ const bot = new Client({
     GatewayIntentBits.GuildMembers,
   ],
 });
-
+bot.ROLE_CONFIG = ROLE_CONFIG;
 bot.commands = new Collection([[embedPost.data.name, embedPost]]);
 
 // ── Botがログインして準備完了したら一度だけblacklistCommands.js側を初期化

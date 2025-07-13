@@ -712,15 +712,6 @@ bot.on('messageCreate', async m => {
   for (const session of sessions.values()) {
     if (session.channelId === m.channel.id && session.userId === m.author.id) {
       session.lastAction = Date.now();
-      if (embedPost.isActive(m.channel.id, m.author.id)) {
-        const roleId = embedPost.getRoleId(m.channel.id, m.author.id);
-        // activeChannelsに状態保存→userId, roleIdで判定
-        if (state && state.userId === m.author.id) {
-          // ここでroleIdを使ってWebhook発言
-          const roleId = state.roleId;
-        }
-      }      
-  
       if (session.step === 'mcid') {
         session.data.mcid = m.content.trim();
         session.logs.push(`[${nowJST()}] MCID入力: ${session.data.mcid}`);

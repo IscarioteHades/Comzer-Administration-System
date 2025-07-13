@@ -38,9 +38,11 @@ export function isActive(channelId, userId) {
  * @param {string} channelId
  * @returns {string|null}
  */
-export function getRoleId(channelId) {
-  return activeChannels.get(channelId)?.roleId || null;
+export function getRoleId(channelId, userId) {
+  const entry = activeChannels.get(channelId);
+  return entry && entry.userId === userId ? entry.roleId : null;
 }
+
 
 /**
  * ON（役職ロール指定）でセット

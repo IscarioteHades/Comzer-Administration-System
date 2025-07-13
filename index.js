@@ -616,6 +616,9 @@ if (interaction.isChatInputCommand()) {
     }
 
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
+      if (!interaction.replied && !interaction.deferred) {
+    await interaction.deferUpdate(); // 3秒ルール対応（応答済みにする）
+  }
       const selectedRoleId = interaction.values[0];
       activeChannels.set(interaction.channelId, { userId: interaction.user.id, roleId: selectedRoleId });
       await interaction.update({

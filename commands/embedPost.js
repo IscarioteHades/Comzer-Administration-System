@@ -2,9 +2,10 @@
 import {
   SlashCommandBuilder,
   ActionRowBuilder,
-  SelectMenuBuilder,
+  StringSelectMenuBuilder,
   EmbedBuilder,
 } from 'discord.js';
+
 
 /* --------------------------------------------------
  * 1. /rolepost スラッシュコマンドの定義
@@ -89,7 +90,7 @@ export async function execute(interaction) {
   }
 
   if (userRoleIds.length > 1) {
-    const row = new ActionRowBuilder().addComponents(
+const row = new ActionRowBuilder().addComponents(
   new StringSelectMenuBuilder()
     .setCustomId(`rolepost-choose-${interaction.user.id}`)
     .setPlaceholder('役職を選択してください')

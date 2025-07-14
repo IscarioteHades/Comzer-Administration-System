@@ -366,3 +366,9 @@ if (name === "delete_rolepost") {
 
   return true;
 }
+
+  return false;
+} // ← handleCommands の閉じ
+
+// もし handleCommands をデフォルトエクスポートしているなら以下を
+// export default handleCommands;

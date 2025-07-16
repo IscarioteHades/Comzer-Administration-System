@@ -359,7 +359,8 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
       content: "指定のメッセージが見つからないか、削除できませんでした。",
     });
   }
-} // ← handleCommands の閉じ
+}
+}// ← handleCommands の閉じ
 
 // もし handleCommands をデフォルトエクスポートしているなら以下を
 // export default handleCommands;

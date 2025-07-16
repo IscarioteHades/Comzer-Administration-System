@@ -51,33 +51,6 @@ http.createServer((_, res) => res.end("OK")).listen(port, () =>
         console.error("Ping error:", err.message);
       });
   }, intervalMs);
-
-const { Client, GatewayIntentBits, Events, Collection } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-const bot = new Client({
-   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessages],
- });
-
-// ─── コマンド集合をロード ───────────────────────────────────────
-bot.commands = new Collection();
-
-// 1) commands/ フォルダ内のコマンドを読み込む
-const commandsPath = path.join(__dirname, 'commands');
-for (const file of fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'))) {
-  const cmd = require(`./commands/${file}`);
-  if (cmd.data && cmd.execute) {
-      bot.commands.set(cmd.data.name, cmd);
-  }
-}
-
-// 2) blacklistCommands.js のコマンド配列も同様に読み込む
-const { commands: blCommands } = require('./blacklistCommands.js');
-for (const cmd of blCommands) {
-  bot.commands.set(cmd.data.name, cmd);
-}
-// ───────────────────────────────────────────────────────────────
-
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TICKET_CAT = process.env.TICKET_CAT;
@@ -427,15 +400,8 @@ if (interaction.isChatInputCommand()) {
   }
 }
     // ② 既存の SlashCommand／Button の処理
-    if (interaction.isChatInputCommand()) {
-      const cmd = bot.commands.get(interaction.commandName);
-      if (!cmd) {
-        console.warn(`⚠️ Unknown command: ${interaction.commandName}`);
-        return;
-      }
-      await cmd.execute(interaction);
-      return;
-    }
+    const handled = await handleCommands(interaction);
+    if (handled) return;
   
       // DEBUG出力は省略可
       console.log(

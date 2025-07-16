@@ -299,64 +299,66 @@ export async function handleCommands(interaction) {
     return true;
   }
 
-  // blacklistCommands.js
-if (name === "delete_rolepost") {
-  const messageId = interaction.options.getString("message_id", true);
+// /delete_rolepost 処理
+if (interaction.isChatInputCommand() && interaction.commandName === 'delete_rolepost') {
+  await interaction.deferReply({ ephemeral: true });
+
+  const messageId = interaction.options.getString('message_id', true);
   const channel   = interaction.channel;
+  const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {};
+  // 実行者が持っている ROLE_CONFIG 対応ロールID一覧
+  const executorRoleIds = interaction.member.roles.cache
+    .map(r => r.id)
+    .filter(rid => Object.prototype.hasOwnProperty.call(ROLE_CONFIG, rid));
 
   try {
     const msg = await channel.messages.fetch(messageId);
 
     // 1) Webhook 経由でないメッセージは削除不可
     if (!msg.webhookId) {
-      await interaction.reply({ 
-        content: "コムザール行政システムが送信した役職発言のみ削除できます。", 
-        ephemeral: true 
+      return await interaction.editReply({
+        content: "コムザール行政システムが送信した役職発言のみ削除できます。",
       });
-      return true;
     }
 
     // 2) Embed の author.name (= embedName) から roleId を逆引き
     const embed = msg.embeds[0];
-    const authorName = embed.author?.name;
-    const roleIdOfEmbed = Object.keys(ROLE_CONFIG).find(
-      rid => ROLE_CONFIG[rid].embedName === authorName
-    );
-    if (!roleIdOfEmbed) {
-      await interaction.reply({
+    const authorName = embed?.author?.name;
+    if (!authorName) {
+      return await interaction.editReply({
         content: "このメッセージは役職発言ではないようです。",
-        ephemeral: true
       });
-      return true;
+    }
+
+    const roleIdOfEmbed = Object.entries(ROLE_CONFIG).find(
+      ([rid, cfg]) => cfg.embedName === authorName
+    )?.[0];
+
+    if (!roleIdOfEmbed) {
+      return await interaction.editReply({
+        content: "このメッセージは役職発言ではないようです。",
+      });
     }
 
     // 3) 実行者がその roleId を持っているかチェック
     if (!executorRoleIds.includes(roleIdOfEmbed)) {
-      await interaction.reply({
+      return await interaction.editReply({
         content: "あなたにはこの役職発言を削除する権限がありません。",
-        ephemeral: true
       });
-      return true;
     }
 
     // 4) 削除実行
     await msg.delete();
-    await interaction.reply({
+    return await interaction.editReply({
       content: "役職発言を削除しました。",
-      ephemeral: true
     });
 
   } catch (e) {
-    await interaction.reply({
+    console.error("delete_rolepost error:", e);
+    return await interaction.editReply({
       content: "指定のメッセージが見つからないか、削除できませんでした。",
-      ephemeral: true
     });
   }
-
-  return true;
-}
-
-  return false;
 } // ← handleCommands の閉じ
 
 // もし handleCommands をデフォルトエクスポートしているなら以下を

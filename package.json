@@ -11,6 +11,7 @@
   "scripts": {
     "start": "node index.js",
     "deploy": "node commands/deploy-commands.js",
+    "postinstall": "node commands/deploy-commands.js"
   },
 
   "dependencies": {

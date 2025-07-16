@@ -368,6 +368,13 @@ for (const joiner of parsed.joiners) {
 
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
+    // ボタン or セレクトメニュー以外は無視
+  if (!interaction.isButton() && !interaction.isSelectMenu()) return;
+
+  // 初回ACK: 一度だけ deferUpdate() を呼ぶ
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferUpdate();
+  }
   try {
     // ① SelectMenuの処理（ON/OFF 切り替え）
    if (

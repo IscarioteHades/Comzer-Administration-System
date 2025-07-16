@@ -368,13 +368,13 @@ for (const joiner of parsed.joiners) {
 
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
-  if (interaction.isButton() && interaction.customId === 'show_attachment') {
-    return;
-  }
-  if (!interaction.isButton() && !interaction.isStringSelectMenu()) return;
-  if (!interaction.deferred && !interaction.replied) {
-    await interaction.deferUpdate();
-  }
+   if (interaction.isButton()) {
++     const id = interaction.customId ?? "";
++     // 「プレフィックス-セッションID」という形式でないものはスキップ
++     if (!/^(start|cancel|confirm|edit)-/.test(id)) {
++       return;
++     }
++   }
   try {
     // ① SelectMenuの処理（ON/OFF 切り替え）
    if (

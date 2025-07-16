@@ -17,8 +17,4 @@ try {
 } catch (err) {
   console.error(err);
 }
-await rest.put(
-  Routes.applicationGuildCommands(config.clientId, config.guildId),
-  { body: [rolepost.toJSON(), status.toJSON(), ...blacklistCommands.map(c => c.toJSON())] },
-);
 process.exit(0);

@@ -369,7 +369,7 @@ for (const joiner of parsed.joiners) {
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
     // ボタン or セレクトメニュー以外は無視
-  if (!interaction.isButton() && !interaction.isSelectMenu()) return;
+  if (!interaction.isButton() && !interaction.isStringSelectMenu()) return;
 
   // 初回ACK: 一度だけ deferUpdate() を呼ぶ
   if (!interaction.deferred && !interaction.replied) {

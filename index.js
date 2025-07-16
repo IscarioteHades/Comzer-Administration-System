@@ -752,7 +752,11 @@ bot.on('messageCreate', async m => {
         return m.reply('国籍を入力してください。');
       }
       if (session.step === 'nation') {
-        session.data.nation = m.content.trim();
+        const raw = m.content.trim();
+        const noSpace = raw.replace(/\s+/g, '');
+        session.data.nation = /^[A-Za-z]+$/.test(noSpace)
+        noSpace.toLocaleLowerCase('en-US')
+          noSpace;
         session.logs.push(`[${nowJST()}] 国籍入力: ${session.data.nation}`);
         session.step = 'period';
         return m.reply('一時入国期間と目的を入力してください。（例: 観光で10日間）');

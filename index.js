@@ -368,13 +368,14 @@ for (const joiner of parsed.joiners) {
 
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
-   if (interaction.isButton()) {
-+     const id = interaction.customId ?? "";
-+     // 「プレフィックス-セッションID」という形式でないものはスキップ
-+     if (!/^(start|cancel|confirm|edit)-/.test(id)) {
-+       return;
-+     }
-+   }
+  if (!interaction.isButton() && !interaction.isStringSelectMenu()) return;
+  if (interaction.isButton()) {
+    const id = interaction.customId ?? "";
+    // 「プレフィックス-セッションID」という形式でないものはスキップ
+    if (!/^(start|cancel|confirm|edit)-/.test(id)) {
+      return;
+    }
+  }
   try {
     // ① SelectMenuの処理（ON/OFF 切り替え）
    if (

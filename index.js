@@ -51,7 +51,6 @@ http.createServer((_, res) => res.end("OK")).listen(port, () =>
         console.error("Ping error:", err.message);
       });
   }, intervalMs);
-});
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TICKET_CAT = process.env.TICKET_CAT;

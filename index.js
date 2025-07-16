@@ -402,15 +402,6 @@ if (interaction.isChatInputCommand()) {
     // ② 既存の SlashCommand／Button の処理
     const handled = await handleCommands(interaction);
     if (handled) return;
-
-    // ③ フォールバック返信（未対応の interaction）
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({
-        content: "その操作にはまだ対応していません。",
-        ephemeral: true,
-      });
-    }
-
   
       // DEBUG出力は省略可
       console.log(
@@ -637,19 +628,15 @@ if (interaction.isChatInputCommand()) {
           return interaction.update({ content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)', components: [] });
         }
       }
-  
-      // fallback: 未対応の interaction 種別（返信しないと「考え中...」になる）
-        if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({
-              content: "その操作にはまだ対応していません。",
-              ephemeral: true,   // ←末尾にカンマを入れても OK
-           });
-          }
-      
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: "その操作にはまだ対応していません。",
+        ephemeral: true,
+      });
+    }
         } catch (error) {
           // ── try ブロックをここで閉じる ↑↑↑
           console.error("❌ interactionCreate handler error:", error);
-      
           // エラー通知は reply⇔followUp を振り分け
           try {
             if (interaction.deferred || interaction.replied) {

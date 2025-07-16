@@ -124,17 +124,6 @@ export const commands = [
     .setDescription("ブラックリストの一覧を表示"),
 ];
 
-// ----- コマンド登録 -----
-export async function registerCommands(bot) {
-  const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
-  await rest.put(
-    Routes.applicationCommands(bot.user.id),
-    { body: commands.map(c => c.toJSON()) }
-  );
-  console.log("✅ Slash commands registered");
-}
-
-// ----- コマンド実行時のハンドラ -----
 // ----- コマンド実行時のハンドラ -----
 export async function handleCommands(interaction) {
   if (!interaction.isChatInputCommand()) return false;

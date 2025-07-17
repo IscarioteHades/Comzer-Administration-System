@@ -7,6 +7,7 @@ import http from "node:http";
 import { extractionPrompt } from "./prompts.js";
 import * as statusCommand from './commands/status.js';
 import fs from "node:fs";
+require('./logger.js');
 import {
   registerCommands,
   handleCommands,

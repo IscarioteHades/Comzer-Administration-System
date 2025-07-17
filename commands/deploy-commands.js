@@ -1,6 +1,6 @@
 // commands/deploy-commands.js
 import { REST, Routes } from 'discord.js';
-import config from '../config.json';
+import config from '../config.json' assert { type: 'json' };
 import { data as rolepost } from './embedPost.js';
 import { data as status } from './status.js';
 import { commands as blacklistCommands } from '../blacklistCommands.js';

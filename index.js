@@ -32,15 +32,10 @@ import {
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 
-http.createServer((req, res) => {
-  // / と /health の両方で 200 OK
-  if (req.url === '/' || req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    return res.end('OK');
-  }
-  res.writeHead(404);
-  res.end();
-}).listen(port, () => console.log(`Server listening on ${port}`));
+const port = process.env.PORT || 3000;
+http.createServer((_, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('OK');
 }).listen(port, () => console.log(`Server listening on ${port}`));
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;

@@ -313,11 +313,18 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
 
   const messageId = interaction.options.getString('message_id', true);
   const channel   = interaction.channel;
+  const member    = interaction.member;
   const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {};
-  // 実行者が持っている ROLE_CONFIG 対応ロールID一覧
-  const executorRoleIds = interaction.member.roles.cache
-    .map(r => r.id)
-    .filter(rid => Object.prototype.hasOwnProperty.call(ROLE_CONFIG, rid));
+
+  // 環境変数から各モードのロールIDリストをパース
+  const diplomatRoles = (process.env.ROLLID_DIPLOMAT || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  const ministerRoles = (process.env.ROLLID_MINISTER || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
 
   try {
     const msg = await channel.messages.fetch(messageId);
@@ -329,7 +336,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
       });
     }
 
-    // 2) Embed の author.name (= embedName) から roleId を逆引き
+    // 2) Embed の author.name から roleId を逆引き
     const embed = msg.embeds[0];
     const authorName = embed?.author?.name;
     if (!authorName) {
@@ -337,21 +344,36 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
         content: "このメッセージは役職発言ではないようです。",
       });
     }
-
-    const roleIdOfEmbed = Object.entries(ROLE_CONFIG).find(
-      ([rid, cfg]) => cfg.embedName === authorName
-    )?.[0];
-
+    const roleIdOfEmbed = Object.entries(ROLE_CONFIG)
+      .find(([rid, cfg]) => cfg.embedName === authorName)
+      ?.[0];
     if (!roleIdOfEmbed) {
       return await interaction.editReply({
         content: "このメッセージは役職発言ではないようです。",
       });
     }
 
-    // 3) 実行者がその roleId を持っているかチェック
-    if (!executorRoleIds.includes(roleIdOfEmbed)) {
+    // 3) モード別の権限チェック
+    if (diplomatRoles.includes(roleIdOfEmbed)) {
+      // 「外交官モード」の投稿 → 実行者が diplomatRoles のいずれかを持っているか
+      const ok = diplomatRoles.some(rid => member.roles.cache.has(rid));
+      if (!ok) {
+        return await interaction.editReply({
+          content: "外交官モードの発言は **外交官ロール** を持つ人しか削除できません。",
+        });
+      }
+    } else if (ministerRoles.includes(roleIdOfEmbed)) {
+      // 「閣僚モード」の投稿 → 実行者が ministerRoles のいずれかを持っているか
+      const ok = ministerRoles.some(rid => member.roles.cache.has(rid));
+      if (!ok) {
+        return await interaction.editReply({
+          content: "閣僚モードの発言は **閣僚ロール** を持つ人しか削除できません。",
+        });
+      }
+    } else {
+      // どちらにも属さない roleId の場合、削除不可
       return await interaction.editReply({
-        content: "あなたにはこの役職発言を削除する権限がありません。",
+        content: "この投稿は、定義されたモードのものではありません。",
       });
     }
 

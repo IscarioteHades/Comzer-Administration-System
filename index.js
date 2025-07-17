@@ -32,16 +32,15 @@ import {
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 
-// ── HTTP keep-alive サーバー（Render用）
-const port = process.env.PORT || 3000;
 http.createServer((req, res) => {
-  if (req.url === '/health') {
+  // / と /health の両方で 200 OK
+  if (req.url === '/' || req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('OK');
-  } else {
-    res.writeHead(404);
-    res.end();
+    return res.end('OK');
   }
+  res.writeHead(404);
+  res.end();
+}).listen(port, () => console.log(`Server listening on ${port}`));
 }).listen(port, () => console.log(`Server listening on ${port}`));
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;

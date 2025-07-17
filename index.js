@@ -34,23 +34,15 @@ import { GoogleSpreadsheet } from "google-spreadsheet";
 
 // ── HTTP keep-alive サーバー（Render用）
 const port = process.env.PORT || 3000;
-http.createServer((_, res) => res.end("OK")).listen(port, () =>
-  console.log(`HTTP keep-alive on ${port}`)
-);
-// 25 分おきに自己リクエストを送信して “keep-alive”
-  const intervalMs = 25 * 60 * 1000;
-  setInterval(() => {
-    http
-      .get(`http://localhost:${port}`, (res) => {
-        console.log(
-          `Pinged http://localhost:${port} — status: ${res.statusCode}`
-        );
-        // レスポンスは特に読み込む必要がなければ自動的に破棄されます
-      })
-      .on("error", (err) => {
-        console.error("Ping error:", err.message);
-      });
-  }, intervalMs);
+http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+}).listen(port, () => console.log(`Server listening on ${port}`));
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TICKET_CAT = process.env.TICKET_CAT;

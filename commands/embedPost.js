@@ -17,7 +17,6 @@ export const data = new SlashCommandBuilder()
  * -------------------------------------------------- */
 const activeChannels = new Map();  // Map<string, Map<string, string>>
 
-// 指定チャンネルの Map がなければ作る
 function ensureChannelMap(channelId) {
   if (!activeChannels.has(channelId)) {
     activeChannels.set(channelId, new Map());
@@ -46,16 +45,16 @@ export function setInactive(channelId, userId) {
 }
 
 /* --------------------------------------------------
- * 3. /rolepost コマンド本体
+ * 3. /rolepost コマンド本体（モード単位判定版）
  * -------------------------------------------------- */
 export async function execute(interaction) {
   if (interaction.replied || interaction.deferred) return;
   await interaction.deferReply({ ephemeral: true });
 
-  const member       = interaction.member;
-  const ROLE_CONFIG  = interaction.client.ROLE_CONFIG || {};
-  const channelId    = interaction.channelId;
-  const userId       = interaction.user.id;
+  const member     = interaction.member;
+  const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {};
+  const channelId  = interaction.channelId;
+  const userId     = interaction.user.id;
 
   // ON → OFF 切り替え
   if (isActive(channelId, userId)) {
@@ -63,39 +62,69 @@ export async function execute(interaction) {
     return interaction.editReply({ content: '役職発言モードを **OFF** にしました。' });
   }
 
-  // 保有ロールのフィルタリング
-  const userRoles      = member.roles.cache.map(r => r.id);
-  const allowedRoleIds = Object.keys(ROLE_CONFIG);
-  const matchedRoleIds = allowedRoleIds.filter(id => userRoles.includes(id));
+  // 環境変数からモード別ロールリストを取得
+  const diplomatRoles = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
+  const ministerRoles = (process.env.ROLLID_MINISTER  || '').split(',').filter(Boolean);
 
-  if (matchedRoleIds.length === 0) {
+  // 実行者のロールID一覧
+  const userRoles = member.roles.cache.map(r => r.id);
+
+  // どのモードを持っているかを判定
+  const matchedModes = [];
+  if (diplomatRoles.some(rid => userRoles.includes(rid))) {
+    matchedModes.push('diplomat');
+  }
+  if (ministerRoles.some(rid => userRoles.includes(rid))) {
+    matchedModes.push('minister');
+  }
+
+  // モード未保持
+  if (matchedModes.length === 0) {
     return interaction.editReply({ content: '役職ロールを保有していません。' });
   }
 
-  // 複数ロール→選択メニュー
-  if (matchedRoleIds.length > 1) {
+  // 複数モード保持 → 選択メニュー表示
+  if (matchedModes.length > 1) {
+    const options = matchedModes.map(mode => {
+      if (mode === 'diplomat') {
+        return {
+          label: '外交官モード',
+          description: '外務省ロールで発言します',
+          value: 'diplomat',
+          emoji: ROLE_CONFIG[diplomatRoles[0]]?.emoji
+        };
+      } else {
+        return {
+          label: '閣僚モード',
+          description: '閣僚ロールで発言します',
+          value: 'minister',
+          emoji: ROLE_CONFIG[ministerRoles[0]]?.emoji
+        };
+      }
+    });
+
     const menu = new StringSelectMenuBuilder()
       .setCustomId(`rolepost-choose-${userId}`)
-      .setPlaceholder('役職を選択してください')
-      .addOptions(
-        matchedRoleIds.map(rid => ({
-          // ラベルに末尾4桁を追加してユニーク化
-          label: `${ROLE_CONFIG[rid].name} (${rid.slice(-4)})`,
-          value: rid,
-          emoji: ROLE_CONFIG[rid].emoji || undefined,
-        }))
-      );
+      .setPlaceholder('役職モードを選択してください')
+      .addOptions(options);
+
     const row = new ActionRowBuilder().addComponents(menu);
     return interaction.editReply({
-      content: 'どの役職で発言モードを有効にしますか？',
+      content: 'どのモードで発言モードを有効にしますか？',
       components: [row],
     });
   }
 
-  // 単一ロールなら即ON
-  setActive(channelId, userId, matchedRoleIds[0]);
+  // 単一モード保持なら即 ON
+  const mode = matchedModes[0];
+  const roleId = mode === 'diplomat'
+    ? diplomatRoles[0]
+    : ministerRoles[0];
+
+  setActive(channelId, userId, roleId);
+  const modeName = mode === 'diplomat' ? '外交官モード' : '閣僚モード';
   return interaction.editReply({
-    content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[matchedRoleIds[0]].name}）`,
+    content: `役職発言モードを **ON** にしました。（${modeName}）`,
   });
 }
 
@@ -108,12 +137,18 @@ export async function handleRolepostSelect(interaction) {
     return interaction.reply({ content: 'あなた以外は操作できません。', ephemeral: true });
   }
 
-  const roleId = interaction.values[0];
+  const mode = interaction.values[0];  // 'diplomat' or 'minister'
+  const diplomatRoles = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
+  const ministerRoles = (process.env.ROLLID_MINISTER  || '').split(',').filter(Boolean);
+  const roleId = mode === 'diplomat'
+    ? diplomatRoles[0]
+    : ministerRoles[0];
+
   setActive(interaction.channelId, userId, roleId);
 
-  const roleName = interaction.client.ROLE_CONFIG?.[roleId]?.name || '不明なロール';
+  const modeName = mode === 'diplomat' ? '外交官モード' : '閣僚モード';
   await interaction.update({
-    content: `役職発言モードを **ON** にしました。（${roleName}）`,
+    content: `役職発言モードを **ON** にしました。（${modeName}）`,
     components: [],
   });
 }
@@ -126,7 +161,7 @@ export function makeEmbed(content, roleId, ROLE_CONFIG, attachmentURL = null) {
   const embed = new EmbedBuilder()
     .setAuthor({ name: cfg.embedName, iconURL: cfg.embedIcon })
     .setDescription(content)
-    .setColor(cfg.embedColor ?? 0x3498db)
+    .setColor(cfg.embedColor ?? 0x3498db);
 
   if (attachmentURL) {
     embed.setImage(attachmentURL);

@@ -326,6 +326,9 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
     .map(s => s.trim())
     .filter(Boolean);
 
+  // 実行者が持っているロール一覧
+  const executorRoleIds = member.roles.cache.map(r => r.id);
+
   try {
     const msg = await channel.messages.fetch(messageId);
 
@@ -344,9 +347,11 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
         content: "このメッセージは役職発言ではないようです。",
       });
     }
+
     const roleIdOfEmbed = Object.entries(ROLE_CONFIG)
       .find(([rid, cfg]) => cfg.embedName === authorName)
       ?.[0];
+
     if (!roleIdOfEmbed) {
       return await interaction.editReply({
         content: "このメッセージは役職発言ではないようです。",
@@ -354,26 +359,28 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
     }
 
     // 3) モード別の権限チェック
-    if (diplomatRoles.includes(roleIdOfEmbed)) {
-      // 「外交官モード」の投稿 → 実行者が diplomatRoles のいずれかを持っているか
-      const ok = diplomatRoles.some(rid => member.roles.cache.has(rid));
-      if (!ok) {
-        return await interaction.editReply({
-          content: "外交官モードの発言は **外交官ロール** を持つ人しか削除できません。",
-        });
-      }
-    } else if (ministerRoles.includes(roleIdOfEmbed)) {
-      // 「閣僚モード」の投稿 → 実行者が ministerRoles のいずれかを持っているか
-      const ok = ministerRoles.some(rid => member.roles.cache.has(rid));
-      if (!ok) {
-        return await interaction.editReply({
-          content: "閣僚モードの発言は **閣僚ロール** を持つ人しか削除できません。",
-        });
-      }
-    } else {
-      // どちらにも属さない roleId の場合、削除不可
+    let mode = null;
+    if (ministerRoles.includes(roleIdOfEmbed)) {
+      mode = 'minister';
+    } else if (diplomatRoles.includes(roleIdOfEmbed)) {
+      mode = 'diplomat';
+    }
+
+    if (!mode) {
       return await interaction.editReply({
-        content: "この投稿は、定義されたモードのものではありません。",
+        content: "この発言のモードが特定できません。",
+      });
+    }
+
+    const hasPermission = (
+      mode === 'minister'
+        ? ministerRoles.some(r => executorRoleIds.includes(r))
+        : diplomatRoles.some(r => executorRoleIds.includes(r))
+    );
+
+    if (!hasPermission) {
+      return await interaction.editReply({
+        content: `この${mode === 'minister' ? '閣僚' : '外交'}モードの発言を削除する権限がありません。`,
       });
     }
 

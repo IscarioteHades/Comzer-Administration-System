@@ -126,7 +126,6 @@ export function makeEmbed(content, roleId, ROLE_CONFIG, attachmentURL = null) {
     .setAuthor({ name: cfg.embedName, iconURL: cfg.embedIcon })
     .setDescription(content)
     .setColor(cfg.embedColor ?? 0x3498db)
-    .setFooter({ text: `ROLE_ID:${roleId}` });
 
   if (attachmentURL) {
     embed.setImage(attachmentURL);

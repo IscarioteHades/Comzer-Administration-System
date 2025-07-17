@@ -52,19 +52,19 @@ export async function execute(interaction) {
   if (interaction.replied || interaction.deferred) return;
   await interaction.deferReply({ ephemeral: true });
 
-  const member = interaction.member;
-  const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {};
-  const channelId = interaction.channelId;
-  const userId = interaction.user.id;
+  const member       = interaction.member;
+  const ROLE_CONFIG  = interaction.client.ROLE_CONFIG || {};
+  const channelId    = interaction.channelId;
+  const userId       = interaction.user.id;
 
-  // ユーザーが既に ON なら OFF
+  // ON → OFF 切り替え
   if (isActive(channelId, userId)) {
     setInactive(channelId, userId);
     return interaction.editReply({ content: '役職発言モードを **OFF** にしました。' });
   }
 
-  // ユーザー保有ロールチェック
-  const userRoles = member.roles.cache.map(r => r.id);
+  // 保有ロールのフィルタリング
+  const userRoles      = member.roles.cache.map(r => r.id);
   const allowedRoleIds = Object.keys(ROLE_CONFIG);
   const matchedRoleIds = allowedRoleIds.filter(id => userRoles.includes(id));
 
@@ -72,14 +72,15 @@ export async function execute(interaction) {
     return interaction.editReply({ content: '役職ロールを保有していません。' });
   }
 
-  // 複数ロール → メニュー選択
+  // 複数ロール→選択メニュー
   if (matchedRoleIds.length > 1) {
     const menu = new StringSelectMenuBuilder()
       .setCustomId(`rolepost-choose-${userId}`)
       .setPlaceholder('役職を選択してください')
       .addOptions(
         matchedRoleIds.map(rid => ({
-          label: ROLE_CONFIG[rid].name,
+          // ラベルに末尾4桁を追加してユニーク化
+          label: `${ROLE_CONFIG[rid].name} (${rid.slice(-4)})`,
           value: rid,
           emoji: ROLE_CONFIG[rid].emoji || undefined,
         }))
@@ -91,7 +92,7 @@ export async function execute(interaction) {
     });
   }
 
-  // 単一ロールなら即 ON
+  // 単一ロールなら即ON
   setActive(channelId, userId, matchedRoleIds[0]);
   return interaction.editReply({
     content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[matchedRoleIds[0]].name}）`,

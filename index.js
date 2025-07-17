@@ -32,6 +32,7 @@ import {
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 
+// ── HTTP keep-alive サーバー（Render用）
 const port = process.env.PORT || 3000;
 http.createServer((_, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });

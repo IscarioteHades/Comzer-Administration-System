@@ -3,6 +3,7 @@ import { REST, Routes } from 'discord.js';
 import config from '../config.json' assert { type: 'json' };
 import { data as rolepost } from './embedPost.js';
 import { data as status } from './status.js';
+import { data as shutdown } from './shutdown.js';
 import { commands as blacklistCommands } from '../blacklistCommands.js';
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -13,6 +14,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     const body = [
       rolepost.toJSON(),
       status.toJSON(),
+      shutdown.toJSON(),      
       ...blacklistCommands.map(c => c.toJSON())
     ];
     const res = await rest.put(

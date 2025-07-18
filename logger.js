@@ -1,7 +1,8 @@
 // logger.js
 
 // 1. .env の読み込み（最初に）
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 const https = require('https');
 const { WEBHOOK_URL } = process.env;

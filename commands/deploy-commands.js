@@ -7,6 +7,9 @@ import { data as shutdown } from './shutdown.js';
 import { commands as blacklistCommands } from '../blacklistCommands.js';
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
+await rest.delete(
+  Routes.applicationGuildCommands(config.clientId, config.guildId)
+);
 (async () => {
   try {
     console.log('🔄 スラッシュコマンドを登録中...');

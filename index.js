@@ -39,6 +39,7 @@ http.createServer((_, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('OK');
 }).listen(port, () => console.log(`Server listening on ${port}`));
+
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TICKET_CAT = process.env.TICKET_CAT;

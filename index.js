@@ -7,6 +7,7 @@ import axios from "axios";
 import http from "node:http";
 import { extractionPrompt } from "./prompts.js";
 import * as statusCommand from './commands/status.js';
+import { data as shutdownData, execute as shutdownExec } from './commands/shutdown.js';
 import fs from "node:fs";
 import {
   registerCommands,

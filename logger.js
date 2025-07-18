@@ -1,12 +1,12 @@
 // logger.js
 
-// 2. 標準モジュール読み込み
+//  標準モジュール読み込み
 import https from 'https';
 import { URL } from 'url';
 
 const { WEBHOOK_URL } = process.env;
 
-// 3. Discord Webhook に送信する関数
+// Discord Webhook に送信する関数
 function sendToWebhook(message) {
   if (!WEBHOOK_URL) return;
 
@@ -39,7 +39,7 @@ function sendToWebhook(message) {
   req.end();
 }
 
-// 4. 除外キーワード：これらを含む行は送らない
+// 除外キーワード：これらを含む行は送らない
 const excludeKeywords = [
   'parentId:',
   'TICKET_CAT:',
@@ -64,7 +64,7 @@ console.log = (...args) => {
   filterAndSend(args.map(String).join(' '));
 };
 
-// 6. console.error フック
+// console.error フック
 const originalError = console.error;
 console.error = (...args) => {
   originalError(...args);

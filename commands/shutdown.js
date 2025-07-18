@@ -1,6 +1,5 @@
 // commands/shutdown.js
 import { SlashCommandBuilder } from 'discord.js';
-
 export const data = new SlashCommandBuilder()
   .setName('shutdown')
   .setDescription('ボットを停止します');

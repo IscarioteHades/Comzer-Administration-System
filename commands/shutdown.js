@@ -6,27 +6,29 @@ export const data = new SlashCommandBuilder()
   .setDescription('ボットを停止します');
 
 export async function execute(interaction) {
-  // 環境変数から許可ロールリストを取得
+  // ———— 権限チェック ————
   const adminRoleIds = (process.env.STOP_ROLE_IDS || '')
     .split(',')
     .map(id => id.trim())
     .filter(Boolean);
-
   const memberRoles = interaction.member.roles.cache;
-
-  // 管理者ロールを一つも持っていなければ拒否
   const hasAdminRole = adminRoleIds.some(roleId => memberRoles.has(roleId));
   if (!hasAdminRole) {
-    return interaction.reply({
-      content: 'このコマンドを実行する権限がありません。',
-      ephemeral: true,
-    });
+    // まだデファーもリプライもしていなければ reply
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.reply({
+        content: 'このコマンドを実行する権限がありません。',
+        ephemeral: true,
+      });
+    }
+    return;
   }
 
-  // 権限 OK
-  await interaction.reply({ content: 'ボットをシャットダウンします…', ephemeral: true });
+  // ———— 安全に ACK ————
+  await interaction.deferReply({ ephemeral: true });
+  await interaction.editReply({ content: 'ボットをシャットダウンします…' });
 
-  // 少し待ってから終了
+  // ———— 少し待って終了 ————
   setTimeout(() => {
     interaction.client.destroy();
     process.exit(0);

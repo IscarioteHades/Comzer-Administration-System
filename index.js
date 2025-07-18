@@ -155,6 +155,7 @@ bot.ROLE_CONFIG = ROLE_CONFIG;
 bot.commands = new Collection([
   [embedPost.data.name, embedPost],
   [statusCommand.data.name, statusCommand]
+  [shutdownData.name,       { data: shutdownData, execute: shutdownExec }
 ]);
 // ── Botがログインして準備完了したら一度だけblacklistCommands.js側を初期化
 bot.once("ready", async () => {

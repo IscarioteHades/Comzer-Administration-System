@@ -3,7 +3,7 @@ import { SlashCommandBuilder } from 'discord.js';
 
 export const data = new SlashCommandBuilder()
   .setName('shutdown')
-  .setDescription('ボットを安全に停止します（管理者用）');
+  .setDescription('ボットを停止します');
 
 export async function execute(interaction) {
   // 環境変数から許可ロールリストを取得

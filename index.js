@@ -161,7 +161,6 @@ bot.commands = new Collection([
 bot.once("ready", async () => {
   console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);
   await initBlacklist();
-  await registerCommands(bot);
   console.log("✅ Bot ready & blacklist initialized");
 });
 

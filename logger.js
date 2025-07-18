@@ -39,7 +39,7 @@ function sendToWebhook(message) {
   req.end();
 }
 
-// 除外キーワード：これらを含む行は送らない
+// 除外キーワード：先頭行にこれらを含むログは丸ごと送らない
 const excludeKeywords = [
   'parentId:',
   'TICKET_CAT:',
@@ -49,15 +49,18 @@ const excludeKeywords = [
 
 // ログをフィルタして Discord に送る共通処理
 function filterAndSend(rawText) {
-  const lines = rawText
-    .split('\n')
-    .filter(line => !excludeKeywords.some(kw => line.includes(kw)));
-
-  const cleaned = lines.join('\n').trim();
+  // 先頭行だけを取り出し
+  const firstLine = rawText.split('\n', 1)[0].trim();
+  // 先頭行に除外キーワードが含まれていれば何もしない
+  if (excludeKeywords.some(kw => firstLine.includes(kw))) {
+    return;
+  }
+  // 含まれていなければ、rawText 全体をそのまま送信
+  const cleaned = rawText.trim();
   if (cleaned) sendToWebhook(cleaned);
 }
 
-// 5. console.log フック
+// console.log フック
 const originalLog = console.log;
 console.log = (...args) => {
   originalLog(...args);

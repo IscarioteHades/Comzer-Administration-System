@@ -4,7 +4,7 @@
 import https from 'https';
 import { URL } from 'url';
 
-const { WEBHOOK_URL } = process.env;
+const { DISCORD_WEBHOOK_URL } = process.env;
 
 // Discord Webhook に送信する関数
 function sendToWebhook(message) {

@@ -163,7 +163,7 @@ bot.once("ready", async () => {
   await initBlacklist();
   await registerCommands(bot);
   console.log("✅ Bot ready & blacklist initialized")};
-});
+);
 
 // ── セッション管理
 const sessions = new Map();

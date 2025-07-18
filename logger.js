@@ -4,10 +4,13 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-const https = require('https');
+// 2. 標準モジュールも import で読み込む
+import https from 'https';
+import { URL } from 'url';
+
 const { WEBHOOK_URL } = process.env;
 
-// 2. Discord Webhook に送信する関数
+// 3. Discord Webhook に送信する関数
 function sendToWebhook(message) {
   if (!WEBHOOK_URL) return;
 
@@ -40,7 +43,7 @@ function sendToWebhook(message) {
   req.end();
 }
 
-// 除外キーワード：これらを含む行は送らない
+// 4. 除外キーワード：これらを含む行は送らない
 const excludeKeywords = [
   'parentId:',
   'TICKET_CAT:',
@@ -58,20 +61,18 @@ function filterAndSend(rawText) {
   if (cleaned) sendToWebhook(cleaned);
 }
 
-// 3. console.log フック
+// 5. console.log フック
 const originalLog = console.log;
 console.log = (...args) => {
   originalLog(...args);
   filterAndSend(args.map(String).join(' '));
 };
 
-// 4. console.error フック
+// 6. console.error フック
 const originalError = console.error;
 console.error = (...args) => {
-  // 1) 元の出力はそのまま残す
   originalError(...args);
 
-  // 2) 引数をすべて文字列化して結合
   const raw = args
     .map(arg => {
       if (arg instanceof Error) return arg.stack || arg.message;
@@ -83,6 +84,5 @@ console.error = (...args) => {
     })
     .join('\n');
 
-  // 3) フィルタ＆送信
   filterAndSend(raw);
 };

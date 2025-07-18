@@ -89,14 +89,12 @@ export async function execute(interaction) {
       if (mode === 'diplomat') {
         return {
           label: '外交官モード',
-          description: '外務省ロールで発言します',
           value: 'diplomat',
           emoji: ROLE_CONFIG[diplomatRoles[0]]?.emoji
         };
       } else {
         return {
           label: '閣僚モード',
-          description: '閣僚ロールで発言します',
           value: 'minister',
           emoji: ROLE_CONFIG[ministerRoles[0]]?.emoji
         };

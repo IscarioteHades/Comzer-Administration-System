@@ -17,7 +17,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
       ...blacklistCommands.map(c => c.toJSON())
     ];
     const res = await rest.put(
-      Routes.applicationGuildCommands(config.clientId, config.guildId),
+      Routes.applicationCommands(config.clientId),
       { body }
     );
     console.log('✅ 登録完了！', res);

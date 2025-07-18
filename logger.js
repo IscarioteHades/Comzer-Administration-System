@@ -1,10 +1,6 @@
 // logger.js
 
-// 1. .env の読み込み（最初に）
-import dotenv from 'dotenv';
-dotenv.config();
-
-// 2. 標準モジュールも import で読み込む
+// 2. 標準モジュール読み込み
 import https from 'https';
 import { URL } from 'url';
 

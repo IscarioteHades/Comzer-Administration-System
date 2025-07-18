@@ -8,13 +8,13 @@ const { DISCORD_WEBHOOK_URL } = process.env;
 
 // Discord Webhook に送信する関数
 function sendToWebhook(message) {
-  if (!WEBHOOK_URL) return;
+  if (!DISCORD_WEBHOOK_URL) return;
 
   const payload = JSON.stringify({
     content: `\`\`\`\n${message}\n\`\`\``,
   });
 
-  const url = new URL(WEBHOOK_URL);
+  const url = new URL(DISCORD_WEBHOOK_URL);
   const options = {
     hostname: url.hostname,
     path: url.pathname + url.search,

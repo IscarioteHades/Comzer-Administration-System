@@ -9,6 +9,7 @@ import { extractionPrompt } from "./prompts.js";
 import * as statusCommand from './commands/status.js';
 import { data as shutdownData, execute as shutdownExec } from './commands/shutdown.js';
 import fs from "node:fs";
+import mysql from 'mysql2/promise';
 import {
   handleCommands,
   initBlacklist,
@@ -39,6 +40,40 @@ http.createServer((_, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('OK');
 }).listen(port, () => console.log(`Server listening on ${port}`));
+
+// MySQL関連
+const db = mysql.createPool({
+  host:               process.env.MYSQL_HOST,
+  user:               process.env.MYSQL_USER,
+  password:           process.env.MYSQL_PASS,
+  database:           process.env.MYSQL_DB,
+  waitForConnections: true,
+  connectionLimit:    10,
+});
+
+// ── プールイベントでログ出力
+// ※EventEmitter を継承しているので、こういうイベントが拾えます
+db.on('connection', () => {
+  console.log('✅ MySQL pool: new connection established');
+});
+db.on('enqueue', () => {
+  console.log('⚙️ MySQL pool: waiting for available connection');
+});
+db.on('error', (err) => {
+  console.error('❌ MySQL pool error', err);
+});
+
+// ── 起動時に1回だけコネクションを取得してテスト
+(async () => {
+  try {
+    const conn = await db.getConnection();
+    console.log('✅ MySQL pool connection successful');
+    conn.release();
+  } catch (err) {
+    console.error('❌ MySQL pool connection failed:', err);
+    // 必要なら process.exit(1);
+  }
+})();
 
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;

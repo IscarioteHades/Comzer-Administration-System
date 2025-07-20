@@ -60,7 +60,7 @@ async function verifyDbHealth() {
 
   const body = await res.json().catch(() => ({}));
   const msg = body.message || res.statusText;
-  console.error([Startup] DB health check returned ${res.status}: ${msg});
+  console.error(`[Startup] DB health check returned ${res.status}: ${msg}`);
   return { ok: false, status: res.status, message: msg };
 }
 

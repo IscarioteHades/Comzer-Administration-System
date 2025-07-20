@@ -59,6 +59,7 @@ async function logPublicIP() {
     console.error('❌ 外部IPの取得に失敗:', error.message);
   }
 }
+
 // ── プールイベントでログ出力
 // ※EventEmitter を継承しているので、こういうイベントが拾えます
 db.on('connection', () => {

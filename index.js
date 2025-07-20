@@ -5,6 +5,7 @@ const config = require("./config.json"); // JSONを require で読み込む方�
 import * as embedPost from './commands/embedPost.js';
 import axios from "axios";
 import http from "node:http";
+import fetch from 'node-fetch';
 import { extractionPrompt } from "./prompts.js";
 import * as statusCommand from './commands/status.js';
 import { data as shutdownData, execute as shutdownExec } from './commands/shutdown.js';

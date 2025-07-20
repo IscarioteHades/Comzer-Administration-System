@@ -43,12 +43,6 @@ http.createServer((_, res) => {
 }).listen(port, () => console.log(`Server listening on ${port}`));
 
 // MySQL関連
-/**
- * Webhook に POST 送信し、429 が返ってきたら Retry-After を読んでリトライ
- * @param {string} url   Webhook URL
- * @param {object} body  JSON ペイロード
- * @param {number} retries リトライ可能回数（デフォルト 3）
- */
 async function postWithRetry(url, body, retries = 3) {
   const res = await fetch(url, {
     method:  'POST',

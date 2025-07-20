@@ -9,6 +9,7 @@ import { extractionPrompt } from "./prompts.js";
 import * as statusCommand from './commands/status.js';
 import { data as shutdownData, execute as shutdownExec } from './commands/shutdown.js';
 import fs from "node:fs";
+import { Client, GatewayIntentBits } from 'discord.js';
 import mysql from 'mysql2/promise';
 import {
   handleCommands,
@@ -51,6 +52,14 @@ const db = mysql.createPool({
   connectionLimit:    10,
 });
 
+async function logPublicIP() {
+  try {
+    const res = await axios.get('https://api.ipify.org?format=json');
+    console.log(`🌐 現在の外部IPアドレス: ${res.data.ip}`);
+  } catch (error) {
+    console.error('❌ 外部IPの取得に失敗:', error.message);
+  }
+}
 // ── プールイベントでログ出力
 // ※EventEmitter を継承しているので、こういうイベントが拾えます
 db.on('connection', () => {
@@ -196,6 +205,7 @@ bot.once("ready", async () => {
   console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);
   await initBlacklist();
   console.log("✅ Bot ready & blacklist initialized");
+  await logPublicIP();
 });
 
 // ── セッション管理

@@ -14,7 +14,7 @@ import {
   initBlacklist,
   isBlacklistedCountry,
   isBlacklistedPlayer,
-} from "./blacklistCommands.js";
+} from "./blacklistCommands.mjs";
 import {
   WebhookClient,
   Client,

@@ -48,6 +48,7 @@ async function postWithRetry(url, body, retries = 3) {
     body:    JSON.stringify(body),
   });
 
+  
   if (res.status === 429 && retries > 0) {
     // Discord/Webhook の場合、秒数で返ってくることが多い
     const waitSec = parseInt(res.headers.get('retry-after') || '1', 10);

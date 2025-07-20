@@ -4,7 +4,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v10";
 import { GoogleSpreadsheet } from "google-spreadsheet";
-import { execute as executeStatus } from "./commands/status.js";
+import { execute as executeStatus } from "./commands/status.mjs";
 import { ROLE_CONFIG } from "./index.mjs";
 
 // Googleシート設定

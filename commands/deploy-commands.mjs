@@ -1,9 +1,9 @@
 // commands/deploy-commands.js
 import { REST, Routes } from 'discord.js';
 import config from '../config.json' assert { type: 'json' };
-import { data as rolepost } from './embedPost.js';
-import { data as status } from './status.js';
-import { data as shutdown } from './shutdown.js';
+import { data as rolepost } from './embedPost.mjs';
+import { data as status } from './status.mjs';
+import { data as shutdown } from './shutdown.mjs';
 import { commands as blacklistCommands } from '../blacklistCommands.mjs';
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 

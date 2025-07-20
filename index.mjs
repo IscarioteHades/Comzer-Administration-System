@@ -1,11 +1,11 @@
-import './logger.js';
+import './logger.mjs';
 import config from './config.json' assert { type: 'json' };
-import * as embedPost from './commands/embedPost.js';
+import * as embedPost from './commands/embedPost.mjs';
 import axios from "axios";
 import http from "node:http";
 import fetch from 'node-fetch';
-import { extractionPrompt } from "./prompts.js";
-import * as statusCommand from './commands/status.js';
+import { extractionPrompt } from "./prompts.mjs";
+import * as statusCommand from './commands/status.mjs';
 import { data as shutdownData, execute as shutdownExec } from './commands/shutdown.js';
 import fs from "node:fs";
 import mysql from 'mysql2/promise';

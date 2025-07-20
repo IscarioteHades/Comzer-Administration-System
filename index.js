@@ -1,7 +1,5 @@
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
 import './logger.js';
-const config = require("./config.json"); // JSONを require で読み込む方法 :contentReference[oaicite:1]{index=1}
+import config from './config.json' assert { type: 'json' };
 import * as embedPost from './commands/embedPost.js';
 import axios from "axios";
 import http from "node:http";

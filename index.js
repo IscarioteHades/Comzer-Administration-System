@@ -42,48 +42,32 @@ http.createServer((_, res) => {
 }).listen(port, () => console.log(`Server listening on ${port}`));
 
 // MySQL関連
-const db = mysql.createPool({
-  host:               process.env.MYSQL_HOST,
-  user:               process.env.MYSQL_USER,
-  password:           process.env.MYSQL_PASS,
-  database:           process.env.MYSQL_DB,
-  waitForConnections: true,
-  connectionLimit:    10,
-});
-
-async function logPublicIP() {
+async function verifyDbHealth() {
+  console.log('[Startup] Checking DB connectivity...');
+  let res;
   try {
-    const res = await axios.get('https://api.ipify.org?format=json');
-    console.log(`🌐 現在の外部IPアドレス: ${res.data.ip}`);
-  } catch (error) {
-    console.error('❌ 外部IPの取得に失敗:', error.message);
+    res = await fetch(HEALTHZ_URL, { method: 'GET' });
+  } catch (e) {
+    console.error('[Startup] Failed to reach health endpoint:', e.message);
+    return { ok: false, error: e.message };
   }
+
+  if (res.ok) {
+    console.log('[Startup] DB Connection OK');
+    return { ok: true };
+  }
+
+  const body = await res.json().catch(() => ({}));
+  const msg = body.message || res.statusText;
+  console.error([Startup] DB health check returned ${res.status}: ${msg});
+  return { ok: false, status: res.status, message: msg };
 }
 
-// ── プールイベントでログ出力
-// ※EventEmitter を継承しているので、こういうイベントが拾えます
-db.on('connection', () => {
-  console.log('✅ MySQL pool: new connection established');
-});
-db.on('enqueue', () => {
-  console.log('⚙️ MySQL pool: waiting for available connection');
-});
-db.on('error', (err) => {
-  console.error('❌ MySQL pool error', err);
-});
-
 // ── 起動時に1回だけコネクションを取得してテスト
-(async () => {
-  try {
-    const conn = await db.getConnection();
-    console.log('✅ MySQL pool connection successful');
-    conn.release();
-  } catch (err) {
-    console.error('❌ MySQL pool connection failed:', err);
-    // 必要なら process.exit(1);
-  }
+(async() => {
+  const health = await verifyDbHealth();
+  console.log(health);
 })();
-
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TICKET_CAT = process.env.TICKET_CAT;
@@ -205,7 +189,6 @@ bot.once("ready", async () => {
   console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);
   await initBlacklist();
   console.log("✅ Bot ready & blacklist initialized");
-  await logPublicIP();
 });
 
 // ── セッション管理

@@ -43,32 +43,39 @@ http.createServer((_, res) => {
 }).listen(port, () => console.log(`Server listening on ${port}`));
 
 // MySQL関連
-async function verifyDbHealth() {
-  console.log('[Startup] Checking DB connectivity...');
-  let res;
-  try {
-    res = await fetch(HEALTHZ_URL, { method: 'GET' });
-  } catch (e) {
-    console.error('[Startup] Failed to reach health endpoint:', e.message);
-    return { ok: false, error: e.message };
+/**
+ * Webhook に POST 送信し、429 が返ってきたら Retry-After を読んでリトライ
+ * @param {string} url   Webhook URL
+ * @param {object} body  JSON ペイロード
+ * @param {number} retries リトライ可能回数（デフォルト 3）
+ */
+async function postWithRetry(url, body, retries = 3) {
+  const res = await fetch(url, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body),
+  });
+
+  if (res.status === 429 && retries > 0) {
+    // Discord/Webhook の場合、秒数で返ってくることが多い
+    const waitSec = parseInt(res.headers.get('retry-after') || '1', 10);
+    console.warn(`[Webhook] 429 Received. Retrying in ${waitSec}s… (remaining: ${retries})`);
+    await new Promise(r => setTimeout(r, (waitSec + 1) * 1000));
+    return postWithRetry(url, body, retries - 1);
   }
 
-  if (res.ok) {
-    console.log('[Startup] DB Connection OK');
-    return { ok: true };
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`[WebhookError] ${res.status} ${text}`);
   }
 
-  const body = await res.json().catch(() => ({}));
-  const msg = body.message || res.statusText;
-  console.error(`[Startup] DB health check returned ${res.status}: ${msg}`);
-  return { ok: false, status: res.status, message: msg };
+  return res.json();
 }
 
-// ── 起動時に1回だけコネクションを取得してテスト
-(async() => {
+// ── 起動時の健康チェックログ送信例 ────────────────────────────────────
+(async () => {
   const health = await verifyDbHealth();
   console.log(health);
-})();
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TICKET_CAT = process.env.TICKET_CAT;

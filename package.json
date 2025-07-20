@@ -22,5 +22,6 @@
     "webdav": "^3.0.0",
     "google-spreadsheet": "^3.3.0",
     "mysql2": "^3.3.1"
+    "node-fetch": "^3.4.1", 
   }
 }

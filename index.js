@@ -396,6 +396,7 @@ async function runInspection(content, session) {
       return data.discord_ids[key];
     })
     .filter(Boolean);
+    console.log("[JoinerCheck] parsed.joinerDiscordIds:", parsed.joinerDiscordIds);
   }
 
   // 5. 審査ルール（例：期間チェックなど、自由に追加！）

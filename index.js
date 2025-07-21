@@ -43,6 +43,7 @@ http.createServer((_, res) => {
 }).listen(port, () => console.log(`Server listening on ${port}`));
 
 // MySQL関連
+const HEALTHZ_URL = process.env.HEALTHZ_URL
 async function verifyDbHealth() {
   console.log('[Startup] Checking DB connectivity...');
   let res;

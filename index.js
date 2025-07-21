@@ -43,12 +43,12 @@ http.createServer((_, res) => {
 }).listen(port, () => console.log(`Server listening on ${port}`));
 
 // MySQL関連
-const HEALTHZ_URL = 'https://comzer-gov.net/wp‑json/czr/v1/healthz'
+const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz'
 async function verifyDbHealth() {
-  console.log('[Startup] Checking DB connectivity...');
+  console.log('[Startup] Checking DB connectivity…', HEALTHZ_URL);
   let res;
   try {
-    res = await fetch(HEALTHZ_URL, { method: 'GET' });
+    res = await fetch(HEALTHZ_URL);
   } catch (e) {
     console.error('[Startup] Failed to reach health endpoint:', e.message);
     return { ok: false, error: e.message };
@@ -60,15 +60,13 @@ async function verifyDbHealth() {
   }
 
   const body = await res.json().catch(() => ({}));
-  const msg = body.message || res.statusText;
-  console.error(`[Startup] DB health check returned ${res.status}: ${msg}`);
-  return { ok: false, status: res.status, message: msg };
+  console.error(`[Startup] DB health check returned ${res.status}:`, body);
+  return { ok: false, status: res.status, message: body.message };
 }
 
-// ── 起動時に1回だけコネクションを取得してテスト
-(async() => {
+(async () => {
   const health = await verifyDbHealth();
-  console.log(health);
+  console.log('→ verifyDbHealth() returned:', health);
 })();
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;

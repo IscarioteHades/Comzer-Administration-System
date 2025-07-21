@@ -10,8 +10,8 @@
   "scripts": {
     "build": "echo 'no build needed'",
     "prestart": "npm run deploy",            
-    "start": "cd Comzer-Administration-System-main && node index.mjs",
-    "deploy": "cd Comzer-Administration-System-main && node commands/deploy-commands.mjs"
+    "start": "node index.js",
+    "deploy": "node commands/deploy-commands.js"
   },
 
   "dependencies": {

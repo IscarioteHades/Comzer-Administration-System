@@ -1,11 +1,13 @@
-import './logger.mjs';
-import config from './config.json' assert { type: 'json' };
-import * as embedPost from './commands/embedPost.mjs';
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+import './logger.js';
+const config = require("./config.json"); // JSONを require で読み込む方法 :contentReference[oaicite:1]{index=1}
+import * as embedPost from './commands/embedPost.js';
 import axios from "axios";
 import http from "node:http";
 import fetch from 'node-fetch';
-import { extractionPrompt } from "./prompts.mjs";
-import * as statusCommand from './commands/status.mjs';
+import { extractionPrompt } from "./prompts.js";
+import * as statusCommand from './commands/status.js';
 import { data as shutdownData, execute as shutdownExec } from './commands/shutdown.js';
 import fs from "node:fs";
 import mysql from 'mysql2/promise';
@@ -14,7 +16,7 @@ import {
   initBlacklist,
   isBlacklistedCountry,
   isBlacklistedPlayer,
-} from "./blacklistCommands.mjs";
+} from "./blacklistCommands.js";
 import {
   WebhookClient,
   Client,
@@ -41,34 +43,32 @@ http.createServer((_, res) => {
 }).listen(port, () => console.log(`Server listening on ${port}`));
 
 // MySQL関連
-async function postWithRetry(url, body, retries = 3) {
-  const res = await fetch(url, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(body),
-  });
-
-  
-  if (res.status === 429 && retries > 0) {
-    // Discord/Webhook の場合、秒数で返ってくることが多い
-    const waitSec = parseInt(res.headers.get('retry-after') || '1', 10);
-    console.warn(`[Webhook] 429 Received. Retrying in ${waitSec}s… (remaining: ${retries})`);
-    await new Promise(r => setTimeout(r, (waitSec + 1) * 1000));
-    return postWithRetry(url, body, retries - 1);
+async function verifyDbHealth() {
+  console.log('[Startup] Checking DB connectivity...');
+  let res;
+  try {
+    res = await fetch(HEALTHZ_URL, { method: 'GET' });
+  } catch (e) {
+    console.error('[Startup] Failed to reach health endpoint:', e.message);
+    return { ok: false, error: e.message };
   }
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`[WebhookError] ${res.status} ${text}`);
+  if (res.ok) {
+    console.log('[Startup] DB Connection OK');
+    return { ok: true };
   }
 
-  return res.json();
+  const body = await res.json().catch(() => ({}));
+  const msg = body.message || res.statusText;
+  console.error(`[Startup] DB health check returned ${res.status}: ${msg}`);
+  return { ok: false, status: res.status, message: msg };
 }
 
-// ── 起動時の健康チェックログ送信例 ────────────────────────────────────
-(async () => {
+// ── 起動時に1回だけコネクションを取得してテスト
+(async() => {
   const health = await verifyDbHealth();
   console.log(health);
+})();
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TICKET_CAT = process.env.TICKET_CAT;
@@ -818,5 +818,3 @@ bot.on('messageCreate', async m => {
 
 // ── Bot 起動
 bot.login(DISCORD_TOKEN);
-
- 

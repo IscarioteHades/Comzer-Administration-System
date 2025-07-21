@@ -454,20 +454,6 @@ bot.on('interactionCreate', async interaction => {
   const sessionId = interaction.customId.split('-')[1];
   const session = sessions.get(sessionId);
   const { mcid, nation, period, companions = [], joiner } = session.data;
-  const inputText = [
-    `MCID: ${mcid}`,
-    `国籍: ${nation}`,
-    `期間・目的: ${period}`,
-    companions.length > 0
-    ? `同行者: ${companions.join(', ')}`
-    : '',
-    joiner
-    ? `合流者: ${joiner}`
-    : ''
-  ]
-    .filter(Boolean)       // 空文字を除外
-  .join('\n');           // 改行で結合
-  
   const result = await runInspection(inputText, session);
 
   if (result.confirmJoiner) {

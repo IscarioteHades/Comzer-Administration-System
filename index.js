@@ -358,46 +358,65 @@ async function runInspection(content, session) {
   if (parsed.joiners && parsed.joiners.length > 0) {
   // ① 配列チェック
   const joinerList = parsed.joiners;
+  console.log("[JoinerCheck] joinerList:", joinerList);
   console.log("[JoinerCheck] Sending Authorization:", `Bearer ${API_TOKEN}`);
+
   // ② WordPress プラグインに問い合わせ
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${API_TOKEN}`,
-      "Content-Type":  "application/json"
-    },
-    body: JSON.stringify({
-      action:  "match_joiners_strict",
-      joiners: joinerList
-    })
-  });
-
-  // ③ レスポンスをパース
-  const data = await res.json().catch(() => ({}));
-
-  // ④ エラー時は即リターン
-  if (!res.ok) {
-  // 開発者向けログ
-  console.error("[JoinerCheck][Error] APIエラー");
-  console.error(`  URL:    ${API_URL}`);
-  console.error(`  Status: ${res.status} (${res.statusText})`);
-  console.error("  Body:   ", data);
+  let res;
+  try {
+    res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_TOKEN}`,
+        "Content-Type":  "application/json"
+      },
+      body: JSON.stringify({
+        action:  "match_joiners_strict",
+        joiners: joinerList
+      })
+    });
+  } catch (e) {
+    console.error("[JoinerCheck][Error] ネットワークエラー:", e.message);
     return {
       approved: false,
-      content: data.message
+      content: "合流者チェックの通信に失敗しました。ネットワークをご確認ください。"
     };
   }
 
-  // ⑤ 成功時は Discord ID リストを構築
+  // ③ レスポンスをパース
+  const data = await res.json().catch(() => ({}));
+  console.log("[JoinerCheck] data.discord_ids:", data.discord_ids);
+
+  // ④ エラー時は即リターン（開発者向けログを詳細に）
+  if (!res.ok) {
+    console.error("[JoinerCheck][Error] APIエラー");
+    console.error(`  URL:    ${API_URL}`);
+    console.error(`  Status: ${res.status} (${res.statusText})`);
+    console.error("  Body:   ", data);
+    // 401／403 など特定ステータスごとのメッセージも可能
+    return {
+      approved: false,
+      content: data.message || `サーバーエラー(${res.status})が発生しました。`
+    };
+  }
+
+  // ⑤ 成功時は Discord ID リストを構築しつつ、過程をログ
   parsed.joinerDiscordIds = joinerList
-    // normalize/小文字化してキーを一致させる
     .map(j => {
       const key = j.trim().normalize("NFKC").toLowerCase();
-      return data.discord_ids[key];
+      const id  = data.discord_ids?.[key];
+      if (!id) {
+        console.warn(`[JoinerCheck][Warn] キー "${key}" に対応する Discord ID が見つかりません`);
+      } else {
+        console.log(`[JoinerCheck] キー "${key}" → Discord ID: ${id}`);
+      }
+      return id;
     })
     .filter(Boolean);
-    console.log("[JoinerCheck] parsed.joinerDiscordIds:", parsed.joinerDiscordIds);
-  }
+
+  // ⑥ 最終的な ID リスト
+  console.log("[JoinerCheck] parsed.joinerDiscordIds:", parsed.joinerDiscordIds);
+}
 
   // 5. 審査ルール（例：期間チェックなど、自由に追加！）
   // 例: 期間が31日超えなら却下など（例示・要件に合わせて変更可）

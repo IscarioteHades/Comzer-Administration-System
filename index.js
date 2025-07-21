@@ -448,6 +448,8 @@ async function runInspection(content, session) {
   parsed,
   content: '合流者確認中…'    // ← ここを追加
 };
+  return { approved: true, content: parsed };
+} 
 
 bot.on('interactionCreate', async interaction => {
   if (!interaction.isButton() || !interaction.customId.startsWith('apply-')) return;
@@ -522,7 +524,7 @@ bot.on('interactionCreate', async interaction => {
   session.logs.push(`[${nowJST()}] 承認処理開始`);
   return handleApprove(interaction, result.content, session);
 });
-}
+
 
 
 

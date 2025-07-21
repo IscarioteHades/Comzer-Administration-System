@@ -44,39 +44,46 @@ http.createServer((_, res) => {
 
 // MySQL関連
 const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz'
-async function verifyDbHealth() {
-  // ヘルスチェック開始ログ
-  console.log('[Startup] DB接続チェック…', HEALTHZ_URL);
+let healthPromise;  // 一度だけ fetch するための Promise
 
-  let res;
-  try {
-    res = await fetch(HEALTHZ_URL);
-  } catch (e) {
-    // ネットワークエラー時
-    console.error('[Startup] ヘルスエンドポイント到達失敗:', e.message);
-    return { ok: false, error: e.message };
+async function verifyDbHealthOnce() {
+  if (healthPromise) {
+    // すでに呼んでいれば、前回の結果を返す
+    return healthPromise;
   }
-
-  if (res.ok) {
-    // HTTP 200 のとき
-    console.log('[Startup] DB 接続 OK');
-    return { ok: true };
-  }
-
-  // それ以外のステータス
-  const body = await res.json().catch(() => ({}));
-  console.error(
-    `[Startup] DBヘルスチェック ${res.status} エラー:`,
-    body.message || body
-  );
-  return { ok: false, status: res.status, message: body.message };
+  // 初回だけ実際に fetch して、その Promise をキャッシュ
+  healthPromise = (async () => {
+    console.log('[Startup] DB接続チェック…', HEALTHZ_URL);
+    let res;
+    try {
+      res = await fetch(HEALTHZ_URL);
+    } catch (e) {
+      console.error('[Startup] ヘルスエンドポイント到達失敗:', e.message);
+      return { ok: false, error: e.message };
+    }
+    if (res.ok) {
+      console.log('[Startup] DB 接続 OK');
+      return { ok: true };
+    }
+    const body = await res.json().catch(() => ({}));
+    console.error(
+      `[Startup] DBヘルスチェック ${res.status} エラー:`,
+      body.message || body
+    );
+    return { ok: false, status: res.status, message: body.message };
+  })();
+  return healthPromise;
 }
 
-;(async () => {
-  const health = await verifyDbHealth();
-  console.log('→ verifyDbHealth() の戻り値:', health);
-  // もし文字列にまとめたいなら JSON.stringify を使う
-  // console.log(`→ verifyDbHealth() の戻り値: ${JSON.stringify(health, null, 2)}`);
+// 起動時に一度だけ呼ぶ
+(async () => {
+  const health = await verifyDbHealthOnce();
+  console.log('→ verifyDbHealthOnce() の戻り値:', health);
+
+  // たとえばコマンドハンドラや他の箇所で再度呼んでも、
+  // キャッシュされた結果がすぐ返ってくるので fetch は走らない
+  const second = await verifyDbHealthOnce();
+  console.log('→ 二回目:', second);
 })();
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;

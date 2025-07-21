@@ -43,7 +43,7 @@ http.createServer((_, res) => {
 }).listen(port, () => console.log(`Server listening on ${port}`));
 
 // MySQL関連
-const HEALTHZ_URL = https://www.comzer-gov.net/wp‑json/czr/v1/healthz
+const HEALTHZ_URL = 'https://www.comzer-gov.net/wp‑json/czr/v1/healthz'
 async function verifyDbHealth() {
   console.log('[Startup] Checking DB connectivity...');
   let res;

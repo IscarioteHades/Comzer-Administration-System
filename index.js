@@ -401,14 +401,13 @@ async function runInspection(content, session) {
   }
 
   // ⑤ 成功時は Discord ID リストを構築しつつ、過程をログ
-  parsed.joinerDiscordIds = joinerList
+    parsed.joinerDiscordIds = joinerList
     .map(j => {
-      const key = j.trim().normalize("NFKC").toLowerCase();
-      const id  = data.discord_ids?.[key];
+      const id = data.discord_ids[j];
       if (!id) {
-        console.warn(`[JoinerCheck][Warn] キー "${key}" に対応する Discord ID が見つかりません`);
+        console.warn(`[JoinerCheck][Warn] raw "${j}" が key になっていません`);
       } else {
-        console.log(`[JoinerCheck] キー "${key}" → Discord ID: ${id}`);
+        console.log(`[JoinerCheck] raw "${j}" → ID ${id}`);
       }
       return id;
     })

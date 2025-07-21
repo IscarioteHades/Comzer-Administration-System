@@ -73,14 +73,6 @@ async function verifyDbHealthOnce() {
   return healthPromise;
 }
 
-// 起動時に一度だけ呼ぶ
-client.once('ready', async () => {
-  const health = await verifyDbHealthOnce();
-  console.log('→ verifyDbHealthOnce() の戻り値:', health);
-
-  // 以降、他の箇所では verifyDbHealthOnce() を呼ばない！
-  // 必要なら、health を使って初期化を続けるだけにする
-});
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TICKET_CAT = process.env.TICKET_CAT;
@@ -202,6 +194,7 @@ bot.once("ready", async () => {
   console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);
   await initBlacklist();
   console.log("✅ Bot ready & blacklist initialized");
+  const health = await verifyDbHealthOnce();
 });
 
 // ── セッション管理

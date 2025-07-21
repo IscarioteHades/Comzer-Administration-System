@@ -5,6 +5,7 @@ import { data as rolepost } from './embedPost.js';
 import { data as status } from './status.js';
 import { data as shutdown } from './shutdown.js';
 import { commands as blacklistCommands } from '../blacklistCommands.js';
+import { data as start } from './start.js';
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
@@ -22,6 +23,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
       rolepost.toJSON(),
       status.toJSON(),
       shutdown.toJSON(),
+      start.toJSON(),
       ...blacklistCommands.map(c => c.toJSON()),
     ];
 

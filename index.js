@@ -446,6 +446,7 @@ async function runInspection(content, session) {
 
   if (parsed.joinerDiscordIds.length > 0 && hasAllRequired) {
   return {
+  approved: false,
   confirmJoiner: true,
   discordId: String(parsed.joinerDiscordIds[0]),
   parsed,

@@ -486,6 +486,53 @@ bot.on('interactionCreate', async interaction => {
   const result = await runInspection(inputText, session);
   session.data.parsed = result.parsed;
 
+  // ── 合流者用ボタン応答ハンドラ ──
+bot.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  // customId は joiner-yes-<sessionId> または joiner-no-<sessionId>
+  const [ , answer, sessionId ] = interaction.customId.split('-');
+  const session = sessions.get(sessionId);
+  if (!session) return;
+
+  // DM なので defer が必要なら deferUpdate
+  await interaction.deferUpdate();
+
+  // 元の申請メッセージを保持している interaction or message を取得
+  // （ここでは session.data.originalInteraction を保存している想定）
+  const orig = session.data.originalInteraction;
+
+  // runInspection の結果を使うか、parsed を再利用
+  const result = session.data.lastInspectionResult;
+  // content を更新したい場合はここで上書き
+  if (answer === 'no') {
+    result.content = '合流者確認が取れなかったため却下します。';
+  }
+  // approved フラグは yes のときだけ true
+  result.approved = (answer === 'yes');
+
+  // ここから下流の承認／却下ロジックにそのまま流し込む
+  if (result.approved) {
+    // 承認パス
+    await orig.editReply({
+      content: null,
+      embeds: [ /* 承認用 Embed を再利用 or 再構築 */ ],
+      components: []
+    });
+    // 公示用チャンネルへの送信等も入れる
+    return handleApprove(orig, session.data.parsed, session);
+  } else {
+    // 却下パス
+    await orig.editReply({
+      content: result.content,
+      components: []
+    });
+    session.logs.push(`[${nowJST()}] 合流者：いいえ →却下`);
+    return endSession(session.id, '却下');
+  }
+});
+
+
   
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {

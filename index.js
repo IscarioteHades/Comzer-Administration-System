@@ -713,32 +713,43 @@ if (interaction.isChatInputCommand()) {
             Array.isArray(data.joiners) && data.joiners.length > 0
               ? data.joiners.join(", ")
               : "なし";
-              if (result.confirmJoiner && result.discordId) {
-                const user = await bot.users.fetch(result.discordId);
-                const dm = await user.createDM();
-                session.data.originalInteraction     = interaction;
-                session.data.lastInspectionResult    = result;
-                const row = new ActionRowBuilder().addComponents(
-                  new ButtonBuilder()
-                  .setCustomId(`joiner-yes-${session.id}`)
-                  .setLabel('はい')
-                  .setStyle(ButtonStyle.Success),
-                  new ButtonBuilder()
-                    .setCustomId(`joiner-no-${session.id}`)
-                  .setLabel('いいえ')
-                  .setStyle(ButtonStyle.Danger)
-                );
-                await dm.send({
-                  content: `${session.data.joiner} さんから合流申請がありました。これは正しいですか？`,
-                  components: [row]
-                });
+          if (result.confirmJoiner && result.discordId) {
+            const user = await bot.users.fetch(result.discordId);
+            const dm   = await user.createDM();
+            const row = new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+              .setCustomId(`joiner-yes-${session.id}`)
+              .setLabel('はい').setStyle(ButtonStyle.Success),
+              new ButtonBuilder()
+              .setCustomId(`joiner-no-${session.id}`)
+              .setLabel('いいえ').setStyle(ButtonStyle.Danger),
+            );
+            await dm.send({
+              content: `${session.data.mcid} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
+              components: [row],
+            });
+            await interaction.editReply({
+              content: '申請を受け付けました。しばらくお待ちください。',
+              components: []
+            });
+            session.logs.push(`[${nowJST()}] 合流者確認待ちで一時終了`);
+            return;
+          }
 
-                await interaction.editReply({
-                  content: '申請を受け付けました。合流者の確認が完了するまでお待ちください。',
-                  components: []
-                });
-                return;
-              }
+  // ── ② 却下
+          if (result.approved === false) {
+            await interaction.editReply({
+              content: result.content,
+              components: []
+            });
+            session.logs.push(`[${nowJST()}] 却下`);
+            return endSession(session.id, '却下');
+          }
+
+  // ── ③ 承認
+          session.logs.push(`[${nowJST()}] 承認処理開始`);
+          return handleApprove(interaction, result.content, session);
+        });
   
               if (result.approved && Object.keys(data).length) {
                 const fields = [

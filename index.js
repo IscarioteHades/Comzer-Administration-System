@@ -44,14 +44,11 @@ http.createServer((_, res) => {
 
 // MySQL関連
 const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz'
-let healthPromise;  // 一度だけ fetch するための Promise
+let healthPromise;
 
 async function verifyDbHealthOnce() {
-  if (healthPromise) {
-    // すでに呼んでいれば、前回の結果を返す
-    return healthPromise;
-  }
-  // 初回だけ実際に fetch して、その Promise をキャッシュ
+  if (healthPromise) return healthPromise;
+
   healthPromise = (async () => {
     console.log('[Startup] DB接続チェック…', HEALTHZ_URL);
     let res;
@@ -72,19 +69,18 @@ async function verifyDbHealthOnce() {
     );
     return { ok: false, status: res.status, message: body.message };
   })();
+
   return healthPromise;
 }
 
 // 起動時に一度だけ呼ぶ
-(async () => {
+client.once('ready', async () => {
   const health = await verifyDbHealthOnce();
   console.log('→ verifyDbHealthOnce() の戻り値:', health);
 
-  // たとえばコマンドハンドラや他の箇所で再度呼んでも、
-  // キャッシュされた結果がすぐ返ってくるので fetch は走らない
-  const second = await verifyDbHealthOnce();
-  console.log('→ 二回目:', second);
-})();
+  // 以降、他の箇所では verifyDbHealthOnce() を呼ばない！
+  // 必要なら、health を使って初期化を続けるだけにする
+});
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TICKET_CAT = process.env.TICKET_CAT;

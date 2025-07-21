@@ -448,8 +448,8 @@ async function runInspection(content, session) {
   parsed,
   content: '合流者確認中…'    // ← ここを追加
 };
-  return { approved: true, content: parsed };
 } 
+  return { approved: true, content: parsed };
 
 bot.on('interactionCreate', async interaction => {
   if (!interaction.isButton() || !interaction.customId.startsWith('apply-')) return;

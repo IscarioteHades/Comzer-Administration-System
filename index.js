@@ -391,6 +391,7 @@ async function runInspection(content, session) {
       return data.discord_ids[key];
     })
     .filter(Boolean);
+  }
 
   // 5. 審査ルール（例：期間チェックなど、自由に追加！）
   // 例: 期間が31日超えなら却下など（例示・要件に合わせて変更可）

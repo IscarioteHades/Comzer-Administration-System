@@ -25,15 +25,15 @@ export async function execute(interaction) {
   }
 
   if (!isAllowed) {
-    // 権限なければ即時回答
+    // 権限なければ即時回答（Ephemeral は flags で指定）
     return interaction.reply({
       content: 'このコマンドを実行する権限がありません。',
-      ephemeral: true
+      flags: 1 << 6
     });
   }
 
   // ── ACK ──
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 1 << 6 });
   await interaction.editReply({ content: 'ボットを再起動しています…' });
 
   try {

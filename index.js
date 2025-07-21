@@ -483,7 +483,7 @@ bot.on('interactionCreate', async interaction => {
   // result.confirmJoiner?, result.approved, result.content, result.discordId
 
   // ―― 合流者確認が必要な場合 ――
-  if (result.confirmJoiner && joiner && result.discordId) {
+  if (result.confirmJoiner &&  result.discordId) {
     const user = await bot.users.fetch(result.discordId);
     const dm = await user.createDM();
     const row = new ActionRowBuilder().addComponents(

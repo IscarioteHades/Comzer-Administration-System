@@ -35,7 +35,7 @@ import {
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 
-const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz'
+const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz';
 const API_URL   = "https://comzer-gov.net/wp-json/czr/v1/data-access";
 const API_TOKEN = "WAITOTTEMOBANANATONYUSUKIYADE2025";
 
@@ -379,7 +379,7 @@ async function runInspection(content, session) {
   if (!res.ok) {
     return {
       approved: false,
-      content: data.message || "合流者チェックに失敗しました。"
+      content: data.message
     };
   }
 

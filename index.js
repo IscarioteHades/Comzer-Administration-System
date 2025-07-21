@@ -377,6 +377,11 @@ async function runInspection(content, session) {
 
   // ④ エラー時は即リターン
   if (!res.ok) {
+  // 開発者向けログ
+  console.error("[JoinerCheck][Error] APIエラー");
+  console.error(`  URL:    ${API_URL}`);
+  console.error(`  Status: ${res.status} (${res.statusText})`);
+  console.error("  Body:   ", data);
     return {
       approved: false,
       content: data.message

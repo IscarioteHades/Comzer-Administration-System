@@ -434,11 +434,92 @@ async function runInspection(content, session) {
     return { approved: false, content: "申請情報に不足があります。全項目を入力してください。" };
   }
 
-  // 6. 承認
-  // 承認時に内容を2段組で返す用にパースデータも一緒に返す
+if (parsed.joinerDiscordIds.length > 0 && hasAllRequired) {
+  return {
+    confirmJoiner: true,
+    discordId: parsed.joinerDiscordIds[0],  // 必要に応じて全件ループで DM を飛ばす設計に
+    parsed
+  };
+}
+
+  // 通常承認
   return { approved: true, content: parsed };
 }
 
+
+bot.on('interactionCreate', async interaction => {
+  if (!interaction.isButton() || !interaction.customId.startsWith('confirm-')) return;
+  await interaction.deferReply();
+
+  const sessionId = interaction.customId.split('-')[1];
+  const session = sessions.get(sessionId);
+  const inputText = /* セッションから組み立て */;
+  
+  const result = await runInspection(inputText, session);
+
+  if (result.confirmJoiner) {
+    // — 合流者へのDM送信 —
+    const user = await bot.users.fetch(result.discordId);
+    const dm = await user.createDM();
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`joiner-yes-${session.id}`)
+        .setLabel('はい').setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`joiner-no-${session.id}`)
+        .setLabel('いいえ').setStyle(ButtonStyle.Danger)
+    );
+    await dm.send({
+      content: `${result.parsed.joiner} さんからあなたが合流者と申請がありました。これは正しいですか？`,
+      components: [row],
+    });
+
+    // — 申請者への仮レス —
+    await interaction.editReply({
+      content: '申請を受け付けました。しばらくお待ち下さい',
+      components: []
+    });
+
+    // — セッション一時終了 —
+    session.logs.push(`[${nowJST()}] 合流者確認待ちで一時終了`);
+    sessions.delete(session.id);
+    return;
+  }
+
+  if (result.approved === false) {
+    // 従来の却下処理
+    await interaction.editReply({ content: result.content, components: [] });
+    return endSession(session.id, '却下');
+  }
+
+  // approved===true の場合（合流者無し or 全部通過）
+  return handleApprove(interaction, result.content, session);
+});
+
+bot.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+  const [prefix, answer, sessionId] = interaction.customId.split('-');
+  if (prefix !== 'joiner') return;
+
+  // 回答受付のリアクション
+  await interaction.update({ content: '回答ありがとうございました。', components: [] });
+
+  // セッションを再取得（必要なら永続化しておいたものをフェッチ）
+  const session = sessions.get(sessionId);
+  if (!session) {
+    return interaction.followUp({ content: 'セッションが見つかりませんでした。', ephemeral: true });
+  }
+  const parsed = session.data.parsed;
+
+  if (answer === 'yes') {
+    // — 通常承認処理 —
+    return handleApprove(interaction, parsed, session);
+  } else {
+    // — 却下処理（approved:false）—
+    const reject = { approved: false, content: `合流者「${parsed.joiner}」が申請を承認しませんでした。合流者は正しいですか？` };
+    return handleReject(interaction, reject, session);
+  }
+});
 
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {

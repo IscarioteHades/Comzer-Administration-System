@@ -26,16 +26,17 @@ export async function execute(interaction) {
 
   if (!isAllowed) {
     if (!interaction.deferred && !interaction.replied) {
+      // Ephemeral は flags: 1<<6 で指定
       await interaction.reply({
         content: 'このコマンドを実行する権限がありません。',
-        ephemeral: true
+        flags: 1 << 6
       });
     }
     return;
   }
 
   // ── ACK ──
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 1 << 6 });
   await interaction.editReply({ content: 'ボットをシャットダウンします…' });
 
   // 少し待ってから停止処理
@@ -44,12 +45,12 @@ export async function execute(interaction) {
       // 1) Discord クライアント停止
       interaction.client.destroy();
 
-      // 2) Koyeb 側を一時停止（pause）
+      // 2) Koyeb 側を完全停止（stop）
       const apiToken = process.env.KOYEB_API_TOKEN;
       const appId    = process.env.KOYEB_APP_ID;
       if (apiToken && appId) {
         await axios.post(
-          `https://api.koyeb.com/v1/apps/${appId}/actions/pause`,
+          `https://api.koyeb.com/v1/apps/${appId}/actions/stop`,
           {},
           { headers: { Authorization: `Bearer ${apiToken}` } }
         );

@@ -433,6 +433,13 @@ async function runInspection(content, session) {
   if (!parsed.mcid || !parsed.nation || !parsed.purpose || !parsed.start_datetime || !parsed.end_datetime) {
     return { approved: false, content: "申請情報に不足があります。全項目を入力してください。" };
   }
+  const hasAllRequired = Boolean(
+  parsed.mcid &&
+  parsed.nation &&
+  parsed.purpose &&
+  parsed.start_datetime &&
+  parsed.end_datetime
+);
 
 if (parsed.joinerDiscordIds.length > 0 && hasAllRequired) {
   return {
@@ -454,6 +461,13 @@ bot.on('interactionCreate', async interaction => {
   const sessionId = interaction.customId.split('-')[1];
   const session = sessions.get(sessionId);
   const { mcid, nation, period, companions = [], joiner } = session.data;
+  const inputText = [
+    `MCID: ${mcid}`,
+    `国籍: ${nation}`,
+    `期間・目的: ${period}`,
+    companions.length ? `同行者: ${companions.join(', ')}` : '',
+    joiner ? `合流者: ${joiner}` : ''
+  ].filter(Boolean).join('\n');
   const result = await runInspection(inputText, session);
 
   if (result.confirmJoiner) {

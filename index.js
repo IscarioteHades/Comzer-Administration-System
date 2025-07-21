@@ -45,28 +45,38 @@ http.createServer((_, res) => {
 // MySQL関連
 const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz'
 async function verifyDbHealth() {
-  console.log('[Startup] Checking DB connectivity…', HEALTHZ_URL);
+  // ヘルスチェック開始ログ
+  console.log('[Startup] DB接続チェック…', HEALTHZ_URL);
+
   let res;
   try {
     res = await fetch(HEALTHZ_URL);
   } catch (e) {
-    console.error('[Startup] Failed to reach health endpoint:', e.message);
+    // ネットワークエラー時
+    console.error('[Startup] ヘルスエンドポイント到達失敗:', e.message);
     return { ok: false, error: e.message };
   }
 
   if (res.ok) {
-    console.log('[Startup] DB Connection OK');
+    // HTTP 200 のとき
+    console.log('[Startup] DB 接続 OK');
     return { ok: true };
   }
 
+  // それ以外のステータス
   const body = await res.json().catch(() => ({}));
-  console.error(`[Startup] DB health check returned ${res.status}:`, body);
+  console.error(
+    `[Startup] DBヘルスチェック ${res.status} エラー:`,
+    body.message || body
+  );
   return { ok: false, status: res.status, message: body.message };
 }
 
-(async () => {
+;(async () => {
   const health = await verifyDbHealth();
-  console.log('→ verifyDbHealth() returned:', health);
+  console.log('→ verifyDbHealth() の戻り値:', health);
+  // もし文字列にまとめたいなら JSON.stringify を使う
+  // console.log(`→ verifyDbHealth() の戻り値: ${JSON.stringify(health, null, 2)}`);
 })();
 // ── 環境変数
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;

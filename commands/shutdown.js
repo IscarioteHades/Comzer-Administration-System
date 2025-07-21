@@ -25,18 +25,20 @@ export async function execute(interaction) {
   }
 
   if (!isAllowed) {
-    if (!interaction.deferred && !interaction.replied) {
-      // Ephemeral は flags: 1<<6 で指定
-      await interaction.reply({
-        content: 'このコマンドを実行する権限がありません。',
-        flags: 1 << 6
-      });
-    }
-    return;
+    // 権限がなければ、そのコンテキストに合わせて reply
+    return interaction.reply({
+      content: 'このコマンドを実行する権限がありません。',
+      // ギルド内なら Ephemeral、DM なら通常
+      ...(interaction.guildId ? { flags: 1 << 6 } : {})
+    });
   }
 
   // ── ACK ──
-  await interaction.deferReply({ flags: 1 << 6 });
+  if (interaction.guildId) {
+    await interaction.deferReply({ flags: 1 << 6 });
+  } else {
+    await interaction.deferReply();
+  }
   await interaction.editReply({ content: 'ボットをシャットダウンします…' });
 
   // 少し待ってから停止処理

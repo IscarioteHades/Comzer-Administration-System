@@ -358,7 +358,7 @@ async function runInspection(content, session) {
   if (parsed.joiners && parsed.joiners.length > 0) {
   // ① 配列チェック
   const joinerList = parsed.joiners;
-
+  console.log("[JoinerCheck] Sending Authorization:", `Bearer ${API_TOKEN}`);
   // ② WordPress プラグインに問い合わせ
   const res = await fetch(API_URL, {
     method: "POST",

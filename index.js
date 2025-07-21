@@ -195,6 +195,7 @@ bot.once("ready", async () => {
   await initBlacklist();
   console.log("✅ Bot ready & blacklist initialized");
   const health = await verifyDbHealthOnce();
+  console.log("→ verifyDbHealthOnce() の戻り値:", health);
 });
 
 // ── セッション管理

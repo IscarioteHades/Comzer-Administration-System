@@ -509,7 +509,6 @@ bot.on('interactionCreate', async interaction => {
       components: []
     });
     session.logs.push(`[${nowJST()}] 合流者確認待ちで一時終了`);
-    sessions.delete(session.id);
     return;
   }
 
@@ -546,9 +545,11 @@ bot.on('interactionCreate', async interaction => {
 
   if (answer === 'yes') {
     origResult.approved = true;
+    return endSession(sessionId, '承認');
   } else {
     origResult.approved = false;
     origResult.content  = '合流者確認が取れなかったため却下します。';
+    return endSession(sessionId, '却下');
   }
 
   // 承認か却下を流し込む

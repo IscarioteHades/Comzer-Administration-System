@@ -676,6 +676,44 @@ if (interaction.isChatInputCommand()) {
             Array.isArray(data.joiners) && data.joiners.length > 0
               ? data.joiners.join(", ")
               : "なし";
+              if (result.confirmJoiner &&  result.discordId) {
+                const user = await bot.users.fetch(result.discordId);
+                const dm = await user.createDM();
+                const row = new ActionRowBuilder().addComponents(
+                  new ButtonBuilder()
+                  .setCustomId(`joiner-yes-${session.id}`)
+                  .setLabel('はい').setStyle(ButtonStyle.Success),
+                  new ButtonBuilder()
+                  .setCustomId(`joiner-no-${session.id}`)
+                  .setLabel('いいえ').setStyle(ButtonStyle.Danger)
+                );
+                await dm.send({
+                  content: `${joiner} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
+                  components: [row]
+                });
+                await interaction.editReply({
+                  content: '申請を受け付けました。しばらくお待ち下さい。',
+                  components: []
+                });
+                session.logs.push(`[${nowJST()}] 合流者確認待ちで一時終了`);
+                sessions.delete(session.id);
+                return;
+              }
+          if (result.approved === false) {
+    // result.content に却下理由が入っている想
+            await interaction.editReply({
+              content: result.content',
+              components: []
+            });
+            session.logs.push(`[${nowJST()}] 却下`);
+            return endSession(session.id, '却下');
+          }
+
+  // ―― 承認された場合 ――
+  // result.content に parsed（確認済みテキスト）が入っている
+          session.logs.push(`[${nowJST()}] 承認処理開始`);
+          return handleApprove(interaction, result.content, session);
+        });
   
               if (result.approved && Object.keys(data).length) {
                 const fields = [

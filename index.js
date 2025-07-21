@@ -35,6 +35,10 @@ import {
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 
+const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz'
+const API_URL   = "https://comzer-gov.net/wp-json/czr/v1/data-access";
+const API_TOKEN = "WAITOTTEMOBANANATONYUSUKIYADE2025";
+
 // ── HTTP keep-alive サーバー（Render用）
 const port = process.env.PORT || 3000;
 http.createServer((_, res) => {
@@ -43,7 +47,6 @@ http.createServer((_, res) => {
 }).listen(port, () => console.log(`Server listening on ${port}`));
 
 // MySQL関連
-const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz'
 let healthPromise;
 
 async function verifyDbHealthOnce() {
@@ -353,23 +356,41 @@ async function runInspection(content, session) {
 
   // 4. 合流者チェック（コムザール国民に実在確認）※旧コードの名簿参照部分を活用
   if (parsed.joiners && parsed.joiners.length > 0) {
-    const rows = await sheet.getRows();
-const columnsToCheck = ["氏名", "Discord名", "MCID", "サブMCID"];
-for (const joiner of parsed.joiners) {
-  const target = joiner.trim().normalize("NFKC").toLowerCase();
-  const found = rows.some(row =>
-    columnsToCheck.some(col =>
-      (row[col] || "")
-        .toString()
-        .normalize("NFKC")
-        .toLowerCase() === target
-    )
-  );
-  if (!found) {
-    return { approved: false, content: `合流者「${joiner}」が名簿に見つかりません。DiscordID又はMCIDは正しく記入していますか？` };
+  // ① 配列チェック
+  const joinerList = parsed.joiners;
+
+  // ② WordPress プラグインに問い合わせ
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${API_TOKEN}`,
+      "Content-Type":  "application/json"
+    },
+    body: JSON.stringify({
+      action:  "match_joiners_strict",
+      joiners: joinerList
+    })
+  });
+
+  // ③ レスポンスをパース
+  const data = await res.json().catch(() => ({}));
+
+  // ④ エラー時は即リターン
+  if (!res.ok) {
+    return {
+      approved: false,
+      content: data.message || "合流者チェックに失敗しました。"
+    };
   }
-}
-  }
+
+  // ⑤ 成功時は Discord ID リストを構築
+  parsed.joinerDiscordIds = joinerList
+    // normalize/小文字化してキーを一致させる
+    .map(j => {
+      const key = j.trim().normalize("NFKC").toLowerCase();
+      return data.discord_ids[key];
+    })
+    .filter(Boolean);
 
   // 5. 審査ルール（例：期間チェックなど、自由に追加！）
   // 例: 期間が31日超えなら却下など（例示・要件に合わせて変更可）

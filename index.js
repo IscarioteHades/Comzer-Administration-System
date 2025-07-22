@@ -656,6 +656,21 @@ if (interaction.isChatInputCommand()) {
                 });
                 return;
               }
+          if (result.approved === false) {
+    // result.content に却下理由が入っている想
+            await interaction.editReply({
+              content: result.content',
+              components: []
+            });
+            session.logs.push(`[${nowJST()}] 却下`);
+            return endSession(session.id, '却下');
+          }
+
+  // ―― 承認された場合 ――
+  // result.content に parsed（確認済みテキスト）が入っている
+          session.logs.push(`[${nowJST()}] 承認処理開始`);
+          return handleApprove(interaction, result.content, session);
+        });
   
               if (result.approved && Object.keys(data).length) {
                 const fields = [

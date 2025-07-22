@@ -263,12 +263,13 @@ setInterval(() => {
 }, 60 * 1000);
 
 // ── 審査ロジック
-async function runInspection(content, session) {
+async function runInspection(interaction, content, session, channelId) {
   // 1. GPTで整形
   let parsed;
   try {
     const today = (new Date()).toISOString().slice(0,10);
     const prompt = extractionPrompt.replace("__TODAY__", today);
+    const channel = interaction.client.channels.cache.get(session.channelId);
     const gptRes = await openai.chat.completions.create({
       model: "gpt-4o",
       temperature: 0,
@@ -457,10 +458,15 @@ async function runInspection(content, session) {
   return { approved: true, content: parsed };
 }
 
-async function doApproval(interaction, parsed, session) {
+async function doApproval(interaction, parsed, session, channelId) {
   const data = parsed;
   const today = (new Date()).toISOString().slice(0,10);
   const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;
+  const channel = interaction.client.channels.cache.get(channelId);
+  if (!channel?.isTextBased()) {
+    console.error("無効な channelId:", channelId);
+    return;
+  }
 
   // embed①：申請者への通知
   const embed = new EmbedBuilder()
@@ -498,7 +504,7 @@ async function doApproval(interaction, parsed, session) {
     ]);
 
   // ① ユーザーへの編集済み返信
-  await interaction.editReply({ embeds: [embed], components: [] });
+  await channel.send({ embeds: [embed], components: [] });
 
   // embed②：公示用
   const publishEmbed = new EmbedBuilder()
@@ -567,13 +573,9 @@ bot.on('interactionCreate', async interaction => {
             content: '合流者確認を承認しました。審査手続きを再開します…',
             components: []
           });
-          const targetChannel = bot.channels.cache.get(session.channelId);
-          if (!targetChannel?.isTextBased()) {
-            console.error('元チャネルが見つかりません:', session.channelId);
-            return;
           
         // 例: doApproval を呼ぶ、あるいは残りの処理へフォールスルー
-          await doApproval(interaction, session.data.parsed, session);
+          await doApproval(interaction, session.data.parsed, session, session.channelId);
           await endSession(session.id, '承認');
         } else {
         // 合流者確認 NG: 却下用 embed
@@ -598,7 +600,7 @@ bot.on('interactionCreate', async interaction => {
               `【申請内容】\n${details}`
             )
             .setFooter({ text: "再申請の際は内容をよくご確認ください。" });
-          await interaction.update({ embeds: [rejectEmbed], components: [] });
+          await channel.send({ embeds: [rejectEmbed] });
           await endSession(session.id, '却下');
         }
         return;  // joiner ボタンはここで終わり

@@ -692,29 +692,11 @@ if (interaction.isChatInputCommand()) {
 
   // 却下
           if (result.approved === false) {
-            const details = Object.keys(data).length
-              ? `申請者: ${data.mcid || "不明"}\n` +
-              `国籍: ${data.nation || "不明"}\n` +
-              `入国目的: ${data.purpose || "不明"}\n` +
-              `入国期間: ${(data.start_datetime && data.end_datetime) ? `${data.start_datetime} ～ ${data.end_datetime}` : "不明"}\n` +
-              `同行者: ${companionStr}\n` +
-              `合流者: ${joinerStr}\n`
-              : `申請内容: ${inputText}`;
-            const reasonMsg = typeof result.content === "string"
-              ? result.content
-              : "申請内容に不備や却下条件があったため、審査が却下されました。";
-            const rejectEmbed = new EmbedBuilder()
-              .setColor(0xe74c3c)
-              .setTitle("一時入国審査【却下】")
-              .setDescription(
-                `**申請が却下されました**\n\n` +
-                `【却下理由】\n${reasonMsg}\n\n` +
-                `【申請内容】\n${details}`
-              )
-              .setFooter({ text: "再申請の際は内容をよくご確認ください。" });
-            await interaction.editReply({ embeds: [rejectEmbed], components: [] });
-            return endSession(session.id, "却下");
+            await interaction.editReply({ content: result.content, components: [] });
+            session.logs.push(`[${nowJST()}] 却下`);
+            return endSession(session.id, '却下');
           }
+
   // 承認
           session.logs.push(`[${nowJST()}] 承認処理開始`);
           await doApproval(interaction, session.data.parsed, session);

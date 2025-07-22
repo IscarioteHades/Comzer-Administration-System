@@ -443,10 +443,11 @@ async function runInspection(content, session) {
 
 if (parsed.joinerDiscordIds.length > 0 && hasAllRequired) {
   return {
-    confirmJoiner: true,
-    discordId: parsed.joinerDiscordIds[0],  // 必要に応じて全件ループで DM を飛ばす設計に
-    parsed
-  };
+  confirmJoiner: true,
+  discordId: parsed.joinerDiscordIds[0],
+  parsed,
+  content: '合流者確認中…'    // ← ここを追加
+};
 }
 
   // 通常承認

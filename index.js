@@ -760,12 +760,11 @@ if (interaction.isChatInputCommand()) {
 
      
   // ドロップダウンで保存された roleId を最優先
-bot.on('messageCreate', async (m) => {
   let roleId = embedPost.getRoleId(m.channel.id, m.author.id);
   // state がなければ、メンバーのロール一覧からフォールバック
   if (!roleId) {
     roleId = Object.keys(ROLE_CONFIG)
-      .find(r => m.member.roles.cache.has(r));
+      .find(r => member.roles.cache.has(r));
   }
     if (roleId) {
       try {
@@ -795,6 +794,7 @@ bot.on('messageCreate', async (m) => {
  }
       return;
     }
+  }
   console.log('parentId:', m.channel.parentId, '（型：', typeof m.channel.parentId, '）');
   console.log('TICKET_CAT:', TICKET_CAT, '（型：', typeof TICKET_CAT, '）');
   console.log('mentions.has(bot.user):', m.mentions.has(bot.user));
@@ -888,12 +888,10 @@ bot.on('messageCreate', async (m) => {
           new ButtonBuilder().setCustomId(`edit-${session.id}`).setLabel('修正').setStyle(ButtonStyle.Secondary)
         );
         return m.reply({ content: `以下の内容で審査を実行しますか？\n${summary}`, components: [row] });
-      }  
-      }
+      }      
     }
   }
 });
-
 
 // ── Bot 起動
 bot.login(DISCORD_TOKEN);

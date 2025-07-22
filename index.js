@@ -548,8 +548,6 @@ bot.on('interactionCreate', async interaction => {
     || answerOrNothing;                     // start: use parts[1] as the id
     const session = sessions.get(sessionId);
     if (interaction.customId.startsWith('joiner-')) {
-      const [ type, answer, ...rest ] = interaction.customId.split('-');
-      const sessionId = rest.join('-');
       if (!session) {
         return interaction.reply({
           content: 'セッションが見つかりません。最初からやり直してください。',
@@ -557,6 +555,7 @@ bot.on('interactionCreate', async interaction => {
         });
       }
       session.lastAction = Date.now();
+
     // ── 合流者確認用ボタン処理 ──
       if (type === 'joiner') {
       // DM に送った「はい／いいえ」へのリアクション

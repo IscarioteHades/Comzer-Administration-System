@@ -262,84 +262,6 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-async function doApproval(interaction, parsed, session) {
-  const data = parsed;
-  const today = (new Date()).toISOString().slice(0,10);
-  const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;
-
-  // embed①：申請者への通知
-  const embed = new EmbedBuilder()
-    .setTitle("一時入国審査結果")
-    .setColor(0x3498db)
-    .setDescription(
-      "自動入国審査システムです。\n" +
-      `> 審査結果：**承認**`
-    )
-    .addFields([
-      { name: "申請者", value: data.mcid, inline: true },
-      { name: "申請日", value: today, inline: true },
-      { name: "入国目的", value: safeReplace(data.purpose), inline: true },
-      { name: "入国期間", value: safeReplace(`${data.start_datetime} ～ ${data.end_datetime}`), inline: false },
-      { name: "同行者", value:
-          Array.isArray(data.companions) && data.companions.length
-            ? data.companions.map(c => typeof c==="string"?c:c.mcid).join(", ")
-            : "なし",
-        inline: false
-      },
-      { name: "合流者", value:
-          Array.isArray(data.joiners) && data.joiners.length
-            ? data.joiners.join(", ")
-            : "なし",
-        inline: false
-      },
-      {
-        name: "【留意事項】",
-        value:
-          "・在留期間の延長が予定される場合、速やかにこのチャンネルでお知らせください。合計31日を超える場合は再申請が必要です。\n" +
-          "・申請内容に誤りがあった場合や法令違反時は承認が取り消される場合があります。\n" +
-          "・あなたの入国情報は適切な範囲で国民に共有されます。\n" +
-          "コムザール連邦共和国へようこそ。"
-      }
-    ]);
-
-  // ① ユーザーへの編集済み返信
-  await interaction.editReply({ embeds: [embed], components: [] });
-
-  // embed②：公示用
-  const publishEmbed = new EmbedBuilder()
-    .setTitle("【一時入国審査に係る入国者の公示】")
-    .setColor(0x27ae60)
-    .setDescription("以下の外国籍プレイヤーの入国が承認された為、以下の通り公示いたします。(外務省入管部)")
-    .addFields([
-      { name: "申請者", value: data.mcid, inline: true },
-      { name: "国籍", value: data.nation, inline: true },
-      { name: "申請日", value: today, inline: true },
-      { name: "入国目的", value: safeReplace(data.purpose), inline: true },
-      { name: "入国期間", value: safeReplace(`${data.start_datetime} ～ ${data.end_datetime}`), inline: false },
-      { name: "同行者", value:
-          Array.isArray(data.companions) && data.companions.length
-            ? data.companions.map(c => typeof c==="string"?c:c.mcid).join(", ")
-            : "なし",
-        inline: false
-      },
-      { name: "合流者", value:
-          Array.isArray(data.joiners) && data.joiners.length
-            ? data.joiners.join(", ")
-            : "なし",
-        inline: false
-      }
-    ]);
-
-  // ② 公示用チャンネルに送信
-  const publishChannelId = config.publishChannelId || config.logChannelId || LOG_CHANNEL_ID;
-  const publishChannel = bot.channels.cache.get(publishChannelId);
-  if (publishChannel?.isTextBased()) {
-    await publishChannel.send({ embeds: [publishEmbed] });
-  } else {
-    console.error("公示用チャンネルが見つかりません。ID:", publishChannelId);
-  }
-
-
 // ── 審査ロジック
 async function runInspection(content, session) {
   // 1. GPTで整形
@@ -533,6 +455,118 @@ async function runInspection(content, session) {
 } 
   return { approved: true, content: parsed };
   }
+
+bot.on('interactionCreate', async interaction => {
+  if (!interaction.isButton() || !interaction.customId.startsWith('apply-')) return;
+
+  const sessionId = interaction.customId.split('-')[1];
+  const session   = sessions.get(sessionId);
+  if (!session) return;
+
+  // ★ 初回押下はスキップ ★
+  if (!session.data.clickedOnce) {
+    session.data.clickedOnce = true;
+    session.logs.push(`[${nowJST()}] 初回押下 - スキップ`);
+    return;
+  }
+
+  // ★ ２回目以降の本処理 ★
+  await interaction.deferUpdate();
+
+  // runInspection 実行
+  const { mcid, nation, period, companions = [], joiner } = session.data;
+  const inputText = [
+    `MCID: ${mcid}`,
+    `国籍: ${nation}`,
+    `期間・目的: ${period}`,
+    companions.length ? `同行者: ${companions.join(', ')}` : '',
+    joiner ? `合流者: ${joiner}` : ''
+  ].filter(Boolean).join('\n');
+  session.logs.push(`[${nowJST()}] ２回目押下 - runInspection 実行`);
+  const result = await runInspection(inputText, session);
+  session.data.lastInspectionResult = result;
+  session.data.originalInteraction   = interaction;
+  session.data.parsed                = result.parsed;
+
+    // ── ① 合流者確認保留
+  if (result.confirmJoiner && result.discordId) {
+    const user = await bot.users.fetch(result.discordId);
+    const dm   = await user.createDM();
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`joiner-yes-${session.id}`)
+        .setLabel('はい').setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`joiner-no-${session.id}`)
+        .setLabel('いいえ').setStyle(ButtonStyle.Danger),
+    );
+    await dm.send({
+      content: `${session.data.mcid} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
+      components: [row],
+    });
+    await interaction.editReply({
+      content: '申請を受け付けました。しばらくお待ちください。',
+      components: []
+    });
+    session.logs.push(`[${nowJST()}] 合流者確認待ちで一時終了`);
+    return;
+  }
+
+  // ── ② 却下
+  if (result.approved === false) {
+    await interaction.editReply({
+      content: result.content,
+      components: []
+    });
+    session.logs.push(`[${nowJST()}] 却下`);
+    return endSession(session.id, '却下');
+  }
+
+  // ── ③ 承認
+  session.logs.push(`[${nowJST()}] 承認処理開始`);
+  return handleApprove(interaction, result.content, session);
+});
+
+
+bot.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  const [ , answer, sessionId ] = interaction.customId.split('-');
+  if (answer !== 'yes' && answer !== 'no') return;
+
+  const session = sessions.get(sessionId);
+  if (!session) return;
+
+  // 応答は deferUpdate()
+  await interaction.deferUpdate();
+
+  const origResult = session.data.lastInspectionResult;
+  const origInt    = session.data.originalInteraction;
+
+  if (answer === 'yes') {
+    origResult.approved = true;
+    return endSession(sessionId, '承認');
+  } else {
+    origResult.approved = false;
+    origResult.content  = '合流者確認が取れなかったため却下します。';
+    return endSession(sessionId, '却下');
+  }
+
+  // 承認か却下を流し込む
+  if (origResult.approved) {
+    await origInt.editReply({ content: null, embeds: [], components: [] });
+    return handleApprove(origInt, origResult.content, session);
+  } else {
+    await origInt.editReply({
+      content: origResult.content,
+      components: []
+    });
+    session.logs.push(`[${nowJST()}] 合流者確認結果: no → 却下`);
+    return endSession(session.id, '却下');
+  }
+});
+
+
   
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
@@ -614,69 +648,81 @@ if (interaction.isChatInputCommand()) {
         }
   
         // 確定ボタン押下後の処理
-        // ── 進捗表示込みの confirm 処理 ──
         if (type === 'confirm') {
           await interaction.deferReply();
           session.logs.push(`[${nowJST()}] 確定ボタン押下`);
-
-  // --- 進捗メッセージ用 ---
-          let progressMsg = "申請内容を確認中…";
-          await interaction.editReply({ content: progressMsg, components: [] });
-
-  // タイムアウト監視Promise
-          let isTimeout = false;
-          const timeoutPromise = new Promise(resolve => {
-            setTimeout(() => {
-              isTimeout = true;
-              resolve({
-                approved: false,
-                content: "システムが混雑しています。60秒以上応答がなかったため、タイムアウトとして処理を中断しました。"
-              });
-            }, 60000);
-          });
-
-  // runInspection実行Promise
           const inputText = [
             `MCID: ${session.data.mcid}`,
             `国籍: ${session.data.nation}`,
             `目的・期間: ${session.data.period}`,
-            session.data.companions?.length
-            ? `同行者: ${session.data.companions.join(', ')}`
-      : '',
+            session.data.companions && session.data.companions.length > 0
+              ? `同行者: ${session.data.companions.join(', ')}`
+              : '',
             session.data.joiner ? `合流者: ${session.data.joiner}` : ''
           ].filter(Boolean).join('\n');
+        
+          // --- 進捗メッセージ用 ---
+          let progressMsg = "申請内容を確認中…";
+          await interaction.editReply({ content: progressMsg, components: [] });
+        
+          let isTimeout = false;
+          // タイムアウト監視Promise
+          const timeoutPromise = new Promise(resolve => {
+            setTimeout(() => {
+              isTimeout = true;
+              resolve({ approved: false, content: "システムが混雑しています。60秒以上応答がなかったため、タイムアウトとして処理を中断しました。" });
+            }, 60000); // 60秒
+          });
+        
+          // runInspection実行Promise
           const inspectionPromise = (async () => {
+            // 進捗1
             progressMsg = "申請内容のAI解析中…";
             await interaction.editReply({ content: progressMsg, components: [] });
+            let result;
             try {
-              return await runInspection(inputText, session, async step => {
+              result = await runInspection(inputText, session, async (step) => {
+                // オプション：進捗コールバック（runInspectionから途中経過通知が欲しい場合）
                 progressMsg = step;
                 await interaction.editReply({ content: progressMsg, components: [] });
               });
             } catch (err) {
               console.error('[ERROR] runInspection:', err);
-              return { approved: false, content: '審査中にエラーが発生しました。' };
+              result = { approved: false, content: '審査中にエラーが発生しました。' };
             }
+            return result;
           })();
-
-  // どちらか早い方を採用
-          const result = await Promise.race([timeoutPromise, inspectionPromise]);
+        
+          // どちらか早い方
+          let result = await Promise.race([timeoutPromise, inspectionPromise]);
           if (isTimeout) {
-            await interaction.editReply({
-              content: "⏳ 60秒間応答がなかったため、処理をタイムアウトで中断しました。再度申請してください。",
-              components: []
-            });
+            await interaction.editReply({ content: "⏳ 60秒間応答がなかったため、処理をタイムアウトで中断しました。再度申請してください。", components: [] });
             session.logs.push(`[${nowJST()}] タイムアウトエラー`);
             return endSession(session.id, "タイムアウト");
           }
 
-  // 保留：合流者確認が必要
-          if (result.confirmJoiner) {
-            const dmUser = await bot.users.fetch(result.discordId);
-            const dm     = await dmUser.createDM();
+          // --- Embed通知（承認／却下どちらもこの中で処理！）---
+          const data = typeof result.content === "object" ? result.content : {};
+          const today = (new Date()).toISOString().slice(0, 10);
+          const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;
+          const companionStr =
+            Array.isArray(data.companions) && data.companions.length > 0
+              ? data.companions.map(c => typeof c === "string" ? c : c.mcid).filter(Boolean).join(", ")
+              : "なし";
+          const joinerStr =
+            Array.isArray(data.joiners) && data.joiners.length > 0
+              ? data.joiners.join(", ")
+              : "なし";
+          if (result.confirmJoiner && result.discordId) {
+            const user = await bot.users.fetch(result.discordId);
+            const dm   = await user.createDM();
             const row = new ActionRowBuilder().addComponents(
-              new ButtonBuilder().setCustomId(`joiner-yes-${session.id}`).setLabel('はい').setStyle(ButtonStyle.Success),
-              new ButtonBuilder().setCustomId(`joiner-no-${session.id}`).setLabel('いいえ').setStyle(ButtonStyle.Danger)
+              new ButtonBuilder()
+              .setCustomId(`joiner-yes-${session.id}`)
+              .setLabel('はい').setStyle(ButtonStyle.Success),
+              new ButtonBuilder()
+              .setCustomId(`joiner-no-${session.id}`)
+              .setLabel('いいえ').setStyle(ButtonStyle.Danger),
             );
             await dm.send({
               content: `${session.data.mcid} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
@@ -686,21 +732,116 @@ if (interaction.isChatInputCommand()) {
               content: '申請を受け付けました。しばらくお待ちください。',
               components: []
             });
+            session.logs.push(`[${nowJST()}] 合流者確認待ちで一時終了`);
             return;
           }
 
-  // 却下
+  // ── ② 却下
           if (result.approved === false) {
-            await interaction.editReply({ content: result.content, components: [] });
+            await interaction.editReply({
+              content: result.content,
+              components: []
+            });
             session.logs.push(`[${nowJST()}] 却下`);
             return endSession(session.id, '却下');
           }
 
-  // 承認
+  // ── ③ 承認
           session.logs.push(`[${nowJST()}] 承認処理開始`);
-          await doApproval(interaction, session.data.parsed, session);
-          return endSession(session.id, '承認');
-        }          
+          return handleApprove(interaction, result.content, session);
+        });
+  
+              if (result.approved && Object.keys(data).length) {
+                const fields = [
+                  { name: "申請者", value: data.mcid, inline: true },
+                  { name: "申請日", value: nowJST(), inline: true },
+                  { name: "入国目的", value: safeReplace(data.purpose), inline: true },
+                  { name: "入国期間", value: safeReplace(`${data.start_datetime} ～ ${data.end_datetime}`), inline: false },
+                  { name: "同行者", value: companionStr, inline: false },
+                  { name: "合流者", value: joinerStr, inline: false },
+                ];
+                const embed = new EmbedBuilder()
+                  .setTitle("一時入国審査結果")
+                  .setColor(0x3498db)
+                  .addFields(fields)
+                  .setDescription(
+                    "自動入国審査システムです。上記の通り申請されました\"__**一時入国審査**__\"について、審査が完了いたしましたので、以下の通り通知いたします。\n\n" +
+                    `> 審査結果：**承認**`
+                  )
+                  .addFields({
+                    name: "【留意事項】", value:
+                      "・在留期間の延長が予定される場合、速やかににこのチャンネルでお知らせください。但し、合計在留期間が31日を超える場合、新規に申請が必要です。、\n" +
+                      "・入国が承認されている期間中、申請内容に誤りがあることが判明したり、異なる行為をした場合、又は、コムザール連邦共和国の法令に違反したり、行政省庁の指示に従わなかった場合は、**承認が取り消される**場合があります。\n" +
+                      "・入国中、あなたは[コムザール連邦共和国の明示する法令](https://comzer-gov.net/laws/) を理解したものと解釈され、これの不知を理由に抗弁することはできません。\n" +
+                      "・あなたがコムザール連邦共和国及び国民に対して損害を生じさせた場合、行政省庁は、あなたが在籍する国家に対して、相当の対応を行う可能性があります。\n" +
+                      "・あなたの入国関連情報は、その期間中、公表が不適切と判断される情報を除外した上で、コムザール連邦共和国国民に対して自動的に共有されます。\n\n" +
+                      "コムザール連邦共和国へようこそ。"
+                  });
+                await interaction.editReply({ embeds: [embed], components: [] });
+              
+                // ---- 公示用Embed転記 ----
+                const publishFields = [
+                  { name: "申請者", value: data.mcid, inline: true },
+                  { name: "国籍", value: data.nation, inline: true },  // ←ここを追加
+                  { name: "申請日", value: nowJST(), inline: true },
+                  { name: "入国目的", value: safeReplace(data.purpose), inline: true },
+                  { name: "入国期間", value: safeReplace(`${data.start_datetime} ～ ${data.end_datetime}`), inline: false },
+                  { name: "同行者", value: companionStr, inline: false },
+                  { name: "合流者", value: joinerStr, inline: false },
+                ];
+                const publishEmbed = new EmbedBuilder()
+                  .setTitle("【一時入国審査に係る入国者の公示】")
+                  .addFields(publishFields)
+                  .setColor(0x27ae60)
+                  .setDescription("以下の外国籍プレイヤーの入国が承認された為、以下の通り公示いたします。(外務省入管部)");                
+              
+                // 公示用チャンネル取得（config.json/LOG_CHANNEL_IDどちらでも可）
+                const publishChannelId = config.publishChannelId || config.logChannelId || LOG_CHANNEL_ID;
+                const publishChannel = bot.channels.cache.get(publishChannelId);
+                if (publishChannel?.isTextBased()) {
+                  await publishChannel.send({ embeds: [publishEmbed] });
+                } else {
+                  console.error("公示用チャンネルが見つかりません。ID:", publishChannelId);
+                }
+              
+                return endSession(session.id, "承認");
+              }              
+           else {
+            // --- 却下時 ---
+            let details = "";
+            if (Object.keys(data).length) {
+              details =
+                `申請者: ${data.mcid || "不明"}\n` +
+                `国籍: ${data.nation || "不明"}\n` +
+                `入国目的: ${data.purpose || "不明"}\n` +
+                `入国期間: ${(data.start_datetime && data.end_datetime) ? `${data.start_datetime} ～ ${data.end_datetime}` : "不明"}\n` +
+                `同行者: ${companionStr}\n` +
+                `合流者: ${joinerStr}\n`;
+            } else {
+              details = `申請内容: ${inputText}`;
+            }
+            const reasonMsg =
+              typeof result.content === "string"
+                ? result.content
+                : "申請内容に不備や却下条件があったため、審査が却下されました。";
+  
+            const embed = new EmbedBuilder()
+              .setColor(0xe74c3c)
+              .setTitle("一時入国審査【却下】")
+              .setDescription(
+                `**申請が却下されました**\n\n【却下理由】\n${reasonMsg}\n\n【申請内容】\n${details}`
+              )
+              .setFooter({ text: "再申請の際は内容をよくご確認ください。" });
+  
+            await interaction.editReply({ embeds: [embed], components: [] });
+            return endSession(session.id, "却下");
+          }
+        } // ←このifブロック、ここで終わり！
+        if (type === 'edit') {
+          session.logs.push(`[${nowJST()}] 修正ボタン押下（フロー再開）`);
+          // 入力情報をクリアせず「version」選択から再開
+          session.step = 'version';
+        }
       } // ←このif(interaction.isButton())ブロック、ここで終わり！
   
       // --- セレクトメニュー処理 ---
@@ -756,7 +897,11 @@ if (interaction.isChatInputCommand()) {
       });
 
 // ── メッセージ処理ハンドラ
+bot.on('messageCreate', async m => {
+  if (m.author.bot) return;
 
+   if (embedPost.isActive(m.channel.id, m.author.id)) {
+    const member = m.member;
      
   // ドロップダウンで保存された roleId を最優先
   let roleId = embedPost.getRoleId(m.channel.id, m.author.id);

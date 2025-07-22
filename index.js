@@ -567,11 +567,6 @@ bot.on('interactionCreate', async interaction => {
             content: '合流者確認を承認しました。審査手続きを再開します…',
             components: []
           });
-          const targetChannel = bot.channels.cache.get(session.channelId);
-          if (!targetChannel?.isTextBased()) {
-            console.error('元チャネルが見つかりません:', session.channelId);
-            return;
-          
         // 例: doApproval を呼ぶ、あるいは残りの処理へフォールスルー
           await doApproval(interaction, session.data.parsed, session);
           await endSession(session.id, '承認');

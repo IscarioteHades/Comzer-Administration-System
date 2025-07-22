@@ -891,7 +891,7 @@ bot.on('messageCreate', async (m) => {
       }  
       }
     }
-  }
+  });
 });
 
 

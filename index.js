@@ -501,11 +501,12 @@ bot.on('interactionCreate', async interaction => {
 
   if (result.approved === false) {
     // 従来の却下処理
-    return { approved: false, content: "合流者が申請を却下しました。申請は正しいですか？" };
+    await interaction.editReply({ content: result.content, components: [] });
+    return endSession(session.id, '却下');
   }
 
   // approved===true の場合（合流者無し or 全部通過）
-  return { approved: true, content: parsed };
+  return handleApprove(interaction, result.content, session);
 });
 
 bot.on('interactionCreate', async interaction => {

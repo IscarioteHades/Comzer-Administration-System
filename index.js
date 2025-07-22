@@ -541,7 +541,7 @@ bot.on('interactionCreate', async interaction => {
   if (interaction.isButton()) {
     const id = interaction.customId ?? "";
     // 「プレフィックス-セッションID」という形式でないものはスキップ
-    if (!/^(start|cancel|confirm|edit|joiner)-/.test(id)) {
+    if (!/^(start|cancel|confirm|edit)-/.test(id)) {
       return;
     }
   }

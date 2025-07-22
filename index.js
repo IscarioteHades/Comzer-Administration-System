@@ -385,15 +385,17 @@ async function runInspection(content, session) {
 
   // ③ レスポンスをパース
   const data = await res.json().catch(() => ({}));
-  console.log("[JoinerCheck] data.discord_ids:", data.discord_ids);
+  console.log(
+    "[JoinerCheck] data.discord_ids:",
+    JSON.stringify(data.discord_ids, null, 2)
+  );
 
   // ④ エラー時は即リターン（開発者向けログを詳細に）
   if (!res.ok) {
     console.error("[JoinerCheck][Error] APIエラー");
     console.error(`  URL:    ${API_URL}`);
     console.error(`  Status: ${res.status} (${res.statusText})`);
-    console.error("  Body:   ", data);
-    // 401／403 など特定ステータスごとのメッセージも可能
+    console.error("  Body:   ", JSON.stringify(data, null, 2));
     return {
       approved: false,
       content: data.message || `サーバーエラー(${res.status})が発生しました。`
@@ -401,13 +403,15 @@ async function runInspection(content, session) {
   }
 
   // ⑤ 成功時は Discord ID リストを構築しつつ、過程をログ
-    parsed.joinerDiscordIds = joinerList
+  parsed.joinerDiscordIds = joinerList
     .map(j => {
-      const id = data.discord_ids[j];
+      const raw = j.trim();
+      const key = raw.normalize("NFKC");  // PHP 側が raw キーを使う場合
+      const id  = data.discord_ids?.[key];
       if (!id) {
-        console.warn(`[JoinerCheck][Warn] raw "${j}" が key になっていません`);
+        console.warn(`[JoinerCheck][Warn] raw "${raw}" が discord_ids のキーになっていません`);
       } else {
-        console.log(`[JoinerCheck] raw "${j}" → ID ${id}`);
+        console.log(`[JoinerCheck] raw "${raw}" → ID ${id}`);
       }
       return id;
     })
@@ -429,98 +433,12 @@ async function runInspection(content, session) {
   if (!parsed.mcid || !parsed.nation || !parsed.purpose || !parsed.start_datetime || !parsed.end_datetime) {
     return { approved: false, content: "申請情報に不足があります。全項目を入力してください。" };
   }
-  const hasAllRequired = Boolean(
-  parsed.mcid &&
-  parsed.nation &&
-  parsed.purpose &&
-  parsed.start_datetime &&
-  parsed.end_datetime
-);
 
-  if (parsed.joinerDiscordIds.length > 0 && hasAllRequired) {
-  return {
-  confirmJoiner: true,
-  discordId: parsed.joinerDiscordIds[0],
-  parsed,
-  content: '合流者確認中…'    // ← ここを追加
-};
-} 
+  // 6. 承認
+  // 承認時に内容を2段組で返す用にパースデータも一緒に返す
   return { approved: true, content: parsed };
-  }
+}
 
-bot.on('interactionCreate', async interaction => {
-  if (!interaction.isButton() || !interaction.customId.startsWith('apply-')) return;
-
-  const sessionId = interaction.customId.split('-')[1];
-  const session = sessions.get(sessionId);
-  if (!session) return;
-
-  // ★ 初回押下はスキップ ★
-  if (!session.data.clickedOnce) {
-    session.data.clickedOnce = true;
-    session.logs.push(`[${nowJST()}] 初回押下 - スキップ`);
-    return;
-  }
-
-  // ★ ２回目以降の本処理 ★
-  await interaction.deferReply();
-
-  const { mcid, nation, period, companions = [], joiner } = session.data;
-  const inputText = [
-    `MCID: ${mcid}`,
-    `国籍: ${nation}`,
-    `期間・目的: ${period}`,
-    companions.length ? `同行者: ${companions.join(', ')}` : '',
-    joiner ? `合流者: ${joiner}` : ''
-  ].filter(Boolean).join('\n');
-
-  session.logs.push(`[${nowJST()}] ２回目押下 - runInspection 実行`);
-  const result = await runInspection(inputText, session);
-  // result.confirmJoiner?, result.approved, result.content, result.discordId
-
-  // ―― 合流者確認が必要な場合 ――
-  if (result.confirmJoiner && joiner && result.discordId) {
-    const user = await bot.users.fetch(result.discordId);
-    const dm = await user.createDM();
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`joiner-yes-${session.id}`)
-        .setLabel('はい').setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId(`joiner-no-${session.id}`)
-        .setLabel('いいえ').setStyle(ButtonStyle.Danger)
-    );
-    await dm.send({
-      content: `${joiner} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
-      components: [row],
-    });
-
-    await interaction.editReply({
-      content: '申請を受け付けました。しばらくお待ち下さい。',
-      components: []
-    });
-
-    session.logs.push(`[${nowJST()}] 合流者確認待ちで一時終了`);
-    sessions.delete(session.id);
-    return;
-  }
-
-  // ―― 却下された場合 ――
-  if (result.approved === false) {
-    // result.content に却下理由が入っている想定
-    await interaction.editReply({
-      content: result.content || '申し訳ありません。申請を却下しました。',
-      components: []
-    });
-    session.logs.push(`[${nowJST()}] 却下`);
-    return endSession(session.id, '却下');
-  }
-
-  // ―― 承認された場合 ――
-  // result.content に parsed（確認済みテキスト）が入っている
-  session.logs.push(`[${nowJST()}] 承認処理開始`);
-  return handleApprove(interaction, result.content, session);
-});
 
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {

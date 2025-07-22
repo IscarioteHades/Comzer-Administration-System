@@ -5,32 +5,35 @@ import { data as rolepost } from './embedPost.js';
 import { data as status } from './status.js';
 import { data as shutdown } from './shutdown.js';
 import { commands as blacklistCommands } from '../blacklistCommands.js';
-
+import { data as start } from './start.js';
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log('🔄 Clearing global commands…');
-    const clearedGlobal = await rest.put(
+    console.log('🔄 グローバルスラッシュコマンドを登録中…');
+
+    // 既存のグローバルコマンドをすべて置き換え（空配列でもOK）
+    await rest.put(
       Routes.applicationCommands(config.clientId),
       { body: [] }
     );
-    console.log(`🗑️ Cleared global commands, remaining: ${clearedGlobal.length}`);
 
-    console.log('🔄 Registering global commands…');
-    const commandsBody = [
+    // 改めて全コマンドを登録
+    const body = [
       rolepost.toJSON(),
       status.toJSON(),
       shutdown.toJSON(),
+      start.toJSON(),
       ...blacklistCommands.map(c => c.toJSON()),
     ];
-    const registered = await rest.put(
+
+    const res = await rest.put(
       Routes.applicationCommands(config.clientId),
-      { body: commandsBody }
+      { body }
     );
-    console.log(`✅ Global commands registered: ${registered.length}`);
+    console.log(`✅ グローバルコマンド登録完了: ${res.length} 件`);
   } catch (err) {
-    console.error('❌ Error during command deployment:', err);
+    console.error('❌ コマンド登録エラー:', err);
   } finally {
     process.exit(0);
   }

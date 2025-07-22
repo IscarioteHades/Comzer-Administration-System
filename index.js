@@ -385,17 +385,15 @@ async function runInspection(content, session) {
 
   // ③ レスポンスをパース
   const data = await res.json().catch(() => ({}));
-  console.log(
-    "[JoinerCheck] data.discord_ids:",
-    JSON.stringify(data.discord_ids, null, 2)
-  );
+  console.log("[JoinerCheck] data.discord_ids:", data.discord_ids);
 
   // ④ エラー時は即リターン（開発者向けログを詳細に）
   if (!res.ok) {
     console.error("[JoinerCheck][Error] APIエラー");
     console.error(`  URL:    ${API_URL}`);
     console.error(`  Status: ${res.status} (${res.statusText})`);
-    console.error("  Body:   ", JSON.stringify(data, null, 2));
+    console.error("  Body:   ", data);
+    // 401／403 など特定ステータスごとのメッセージも可能
     return {
       approved: false,
       content: data.message || `サーバーエラー(${res.status})が発生しました。`
@@ -403,15 +401,13 @@ async function runInspection(content, session) {
   }
 
   // ⑤ 成功時は Discord ID リストを構築しつつ、過程をログ
-  parsed.joinerDiscordIds = joinerList
+    parsed.joinerDiscordIds = joinerList
     .map(j => {
-      const raw = j.trim();
-      const key = raw.normalize("NFKC");  // PHP 側が raw キーを使う場合
-      const id  = data.discord_ids?.[key];
+      const id = data.discord_ids[j];
       if (!id) {
-        console.warn(`[JoinerCheck][Warn] raw "${raw}" が discord_ids のキーになっていません`);
+        console.warn(`[JoinerCheck][Warn] raw "${j}" が key になっていません`);
       } else {
-        console.log(`[JoinerCheck] raw "${raw}" → ID ${id}`);
+        console.log(`[JoinerCheck] raw "${j}" → ID ${id}`);
       }
       return id;
     })

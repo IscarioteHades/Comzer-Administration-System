@@ -6,20 +6,37 @@ import { data as status } from './status.js';
 import { data as shutdown } from './shutdown.js';
 import { commands as blacklistCommands } from '../blacklistCommands.js';
 import { data as start } from './start.js';
+
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log('🔄 グローバルスラッシュコマンドを登録中…');
+    
+    // config.guildId: デプロイ対象のギルドID配列
+    for (const guildId of config.guildId) {
+      const guildCommands = await rest.get(
+        Routes.applicationGuildCommands(config.clientId, guildId)
+      );
 
-    // 既存のグローバルコマンドをすべて置き換え（空配列でもOK）
+      if (Array.isArray(guildCommands) && guildCommands.length) {
+        for (const cmd of guildCommands) {
+          await rest.delete(
+            Routes.applicationGuildCommand(config.clientId, guildId, cmd.id)
+          );
+        }
+      }
+    }
+
+    console.log('🔄 Clearing global commands…');
+    // グローバルコマンドを空にする
     await rest.put(
       Routes.applicationCommands(config.clientId),
       { body: [] }
     );
 
-    // 改めて全コマンドを登録
-    const body = [
+    console.log('🔄 Registering global commands…');
+    // グローバルコマンドを登録
+    const commandsBody = [
       rolepost.toJSON(),
       status.toJSON(),
       shutdown.toJSON(),
@@ -27,13 +44,14 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
       ...blacklistCommands.map(c => c.toJSON()),
     ];
 
-    const res = await rest.put(
+    const registered = await rest.put(
       Routes.applicationCommands(config.clientId),
-      { body }
+      { body: commandsBody }
     );
-    console.log(`✅ グローバルコマンド登録完了: ${res.length} 件`);
+
+    console.log(`✅ Global commands registered: ${registered.length}`);
   } catch (err) {
-    console.error('❌ コマンド登録エラー:', err);
+    console.error('❌ Error during command deployment:', err);
   } finally {
     process.exit(0);
   }

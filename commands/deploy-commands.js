@@ -26,8 +26,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
       start.toJSON(),
       ...blacklistCommands.map(c => c.toJSON()),
     ];
-    console.log("登録予定コマンド数:", body.length);
-    console.log("コマンド一覧:", body.map(cmd => cmd.name));
 
     const res = await rest.put(
       Routes.applicationCommands(config.clientId),

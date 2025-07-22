@@ -498,12 +498,12 @@ bot.on('interactionCreate', async interaction => {
         .setLabel('いいえ').setStyle(ButtonStyle.Danger)
     );
     await dm.send({
-      content: `${joiner} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
+      content: `${joiner} さんから申請がありました。これは正しいですか？`,
       components: [row],
     });
 
     await interaction.editReply({
-      content: '申請を受け付けました。しばらくお待ち下さい。',
+      content: '申請を受け付けました。合流者の回答をお待ちください。',
       components: []
     });
 

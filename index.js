@@ -487,44 +487,47 @@ bot.on('interactionCreate', async interaction => {
   session.data.parsed = result.parsed;
 
   // ── 合流者用ボタン応答ハンドラ ──
-// ── 合流者DMボタン応答ハンドラ ──
 bot.on('interactionCreate', async interaction => {
   if (!interaction.isButton()) return;
 
+  // customId は joiner-yes-<sessionId> または joiner-no-<sessionId>
   const [ , answer, sessionId ] = interaction.customId.split('-');
-  if (answer !== 'yes' && answer !== 'no') return;
-
   const session = sessions.get(sessionId);
   if (!session) return;
 
-  // DM 応答なので deferUpdate でリアクションのみ返す
+  // DM なので defer が必要なら deferUpdate
   await interaction.deferUpdate();
 
-  // 保存しておいたオリジナル確定インタラクションと result を取り出し
-  const origResult = session.data.lastInspectionResult;
-  const origInt    = session.data.originalInteraction;
+  // 元の申請メッセージを保持している interaction or message を取得
+  // （ここでは session.data.originalInteraction を保存している想定）
+  const orig = session.data.originalInteraction;
 
-  // 「いいえ」の場合は却下理由を書き換え
+  // runInspection の結果を使うか、parsed を再利用
+  const result = session.data.lastInspectionResult;
+  // content を更新したい場合はここで上書き
   if (answer === 'no') {
-    origResult.content  = '合流者確認が取れなかったため却下します。';
-    origResult.approved = false;
-  } else {
-    // 「はい」の場合は承認フラグを立てる
-    origResult.approved = true;
+    result.content = '合流者確認が取れなかったため却下します。';
   }
+  // approved フラグは yes のときだけ true
+  result.approved = (answer === 'yes');
 
-  // これで元の確定ハンドラと同じ判定ロジックに流し込み
-  if (origResult.approved) {
+  // ここから下流の承認／却下ロジックにそのまま流し込む
+  if (result.approved) {
     // 承認パス
-    await origInt.editReply({ content: null, embeds: [], components: [] });
-    return handleApprove(origInt, origResult.content, session);
-  } else {
-    // 却下パス
-    await origInt.editReply({
-      content: origResult.content,
+    await orig.editReply({
+      content: null,
+      embeds: [ /* 承認用 Embed を再利用 or 再構築 */ ],
       components: []
     });
-    session.logs.push(`[${nowJST()}] 合流者確認結果: no → 却下`);
+    // 公示用チャンネルへの送信等も入れる
+    return handleApprove(orig, session.data.parsed, session);
+  } else {
+    // 却下パス
+    await orig.editReply({
+      content: result.content,
+      components: []
+    });
+    session.logs.push(`[${nowJST()}] 合流者：いいえ →却下`);
     return endSession(session.id, '却下');
   }
 });
@@ -679,8 +682,6 @@ if (interaction.isChatInputCommand()) {
               if (result.confirmJoiner && result.discordId) {
                 const user = await bot.users.fetch(result.discordId);
                 const dm = await user.createDM();
-                session.data.originalInteraction     = interaction;
-                session.data.lastInspectionResult    = result;
                 const row = new ActionRowBuilder().addComponents(
                   new ButtonBuilder()
                   .setCustomId(`joiner-yes-${session.id}`)

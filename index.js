@@ -522,7 +522,6 @@ bot.on('interactionCreate', async interaction => {
   session.logs.push(`[${nowJST()}] 承認処理開始`);
   return handleApprove(interaction, result.content, session);
 });
-}
 
 
 

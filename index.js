@@ -441,19 +441,13 @@ async function runInspection(content, session) {
   parsed.end_datetime
 );
 
-if (parsed.joinerDiscordIds.length > 0 && hasAllRequired) {
+  if (parsed.joinerDiscordIds.length > 0 && hasAllRequired) {
   return {
   confirmJoiner: true,
   discordId: parsed.joinerDiscordIds[0],
   parsed,
   content: '合流者確認中…'    // ← ここを追加
 };
-}
-
-  // 通常承認
-  return { approved: true, content: parsed };
-}
-
 
 bot.on('interactionCreate', async interaction => {
   if (!interaction.isButton() || !interaction.customId.startsWith('apply-')) return;
@@ -483,7 +477,7 @@ bot.on('interactionCreate', async interaction => {
 
   session.logs.push(`[${nowJST()}] ２回目押下 - runInspection 実行`);
   const result = await runInspection(inputText, session);
-  // result.approved: true/false, result.content: parsed  or "" 
+  // result.confirmJoiner?, result.approved, result.content, result.discordId
 
   // ―― 合流者確認が必要な場合 ――
   if (result.confirmJoiner && joiner && result.discordId) {
@@ -514,13 +508,21 @@ bot.on('interactionCreate', async interaction => {
 
   // ―― 却下された場合 ――
   if (result.approved === false) {
-    return { approved: false, content: "合流者が申請を却下しました。合流者は正しいですか？" };
+    // result.content に却下理由が入っている想定
+    await interaction.editReply({
+      content: result.content || '申し訳ありません。申請を却下しました。',
+      components: []
+    });
+    session.logs.push(`[${nowJST()}] 却下`);
+    return endSession(session.id, '却下');
   }
 
   // ―― 承認された場合 ――
   // result.content に parsed（確認済みテキスト）が入っている
-  return { approved: true, content: parsed };
+  session.logs.push(`[${nowJST()}] 承認処理開始`);
+  return handleApprove(interaction, result.content, session);
 });
+
 
 
 // ── コンポーネント応答ハンドラ

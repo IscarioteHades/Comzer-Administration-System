@@ -454,7 +454,7 @@ async function runInspection(content, session) {
 };
 } 
   return { approved: true, content: parsed };
-  };
+  }
 
 async function doApproval(interaction, parsed, session) {
   const data = parsed;
@@ -892,7 +892,6 @@ bot.on('messageCreate', async (m) => {
       }
   }
 });
-
 
 // ── Bot 起動
 bot.login(DISCORD_TOKEN);

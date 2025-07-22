@@ -440,9 +440,6 @@ async function runInspection(content, session) {
   parsed.start_datetime &&
   parsed.end_datetime
 );
-  console.log("🏷️ joiners:", parsed.joiners);
-  console.log("🏷️ joinerDiscordIds:", parsed.joinerDiscordIds);
-  console.log("🏷️ hasAllRequired:", hasAllRequired);
 
   if (parsed.joinerDiscordIds.length > 0 && hasAllRequired) {
   return {

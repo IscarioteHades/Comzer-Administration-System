@@ -760,8 +760,7 @@ if (interaction.isChatInputCommand()) {
 
      
   // ドロップダウンで保存された roleId を最優先
-bot.on('messageCreate', async (m) =>  {
-  if (!m.guild || !m.member) return;
+bot.on('messageCreate', async (m) => {
   let roleId = embedPost.getRoleId(m.channel.id, m.author.id);
   // state がなければ、メンバーのロール一覧からフォールバック
   if (!roleId) {
@@ -891,7 +890,8 @@ bot.on('messageCreate', async (m) =>  {
         return m.reply({ content: `以下の内容で審査を実行しますか？\n${summary}`, components: [row] });
       }  
       }
-  })
+  }
+});
 
 
 // ── Bot 起動

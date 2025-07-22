@@ -454,7 +454,7 @@ async function runInspection(content, session) {
 };
 } 
   return { approved: true, content: parsed };
-  };
+}
 
 async function doApproval(interaction, parsed, session) {
   const data = parsed;

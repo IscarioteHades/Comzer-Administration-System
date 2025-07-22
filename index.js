@@ -262,85 +262,6 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-async function doApproval(interaction, parsed, session) {
-  const data = parsed;
-  const today = (new Date()).toISOString().slice(0,10);
-  const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;
-
-  // embed①：申請者への通知
-  const embed = new EmbedBuilder()
-    .setTitle("一時入国審査結果")
-    .setColor(0x3498db)
-    .setDescription(
-      "自動入国審査システムです。\n" +
-      `> 審査結果：**承認**`
-    )
-    .addFields([
-      { name: "申請者", value: data.mcid, inline: true },
-      { name: "申請日", value: today, inline: true },
-      { name: "入国目的", value: safeReplace(data.purpose), inline: true },
-      { name: "入国期間", value: safeReplace(`${data.start_datetime} ～ ${data.end_datetime}`), inline: false },
-      { name: "同行者", value:
-          Array.isArray(data.companions) && data.companions.length
-            ? data.companions.map(c => typeof c==="string"?c:c.mcid).join(", ")
-            : "なし",
-        inline: false
-      },
-      { name: "合流者", value:
-          Array.isArray(data.joiners) && data.joiners.length
-            ? data.joiners.join(", ")
-            : "なし",
-        inline: false
-      },
-      {
-        name: "【留意事項】",
-        value:
-          "・在留期間の延長が予定される場合、速やかにこのチャンネルでお知らせください。合計31日を超える場合は再申請が必要です。\n" +
-          "・申請内容に誤りがあった場合や法令違反時は承認が取り消される場合があります。\n" +
-          "・あなたの入国情報は適切な範囲で国民に共有されます。\n" +
-          "コムザール連邦共和国へようこそ。"
-      }
-    ]);
-
-  // ① ユーザーへの編集済み返信
-  await interaction.editReply({ embeds: [embed], components: [] });
-
-  // embed②：公示用
-  const publishEmbed = new EmbedBuilder()
-    .setTitle("【一時入国審査に係る入国者の公示】")
-    .setColor(0x27ae60)
-    .setDescription("以下の外国籍プレイヤーの入国が承認された為、以下の通り公示いたします。(外務省入管部)")
-    .addFields([
-      { name: "申請者", value: data.mcid, inline: true },
-      { name: "国籍", value: data.nation, inline: true },
-      { name: "申請日", value: today, inline: true },
-      { name: "入国目的", value: safeReplace(data.purpose), inline: true },
-      { name: "入国期間", value: safeReplace(`${data.start_datetime} ～ ${data.end_datetime}`), inline: false },
-      { name: "同行者", value:
-          Array.isArray(data.companions) && data.companions.length
-            ? data.companions.map(c => typeof c==="string"?c:c.mcid).join(", ")
-            : "なし",
-        inline: false
-      },
-      { name: "合流者", value:
-          Array.isArray(data.joiners) && data.joiners.length
-            ? data.joiners.join(", ")
-            : "なし",
-        inline: false
-      }
-    ]);
-
-  // ② 公示用チャンネルに送信
-  const publishChannelId = config.publishChannelId || config.logChannelId || LOG_CHANNEL_ID;
-  const publishChannel = bot.channels.cache.get(publishChannelId);
-  if (publishChannel?.isTextBased()) {
-    await publishChannel.send({ embeds: [publishEmbed] });
-  } else {
-    console.error("公示用チャンネルが見つかりません。ID:", publishChannelId);
-  }
-}
-
-
 // ── 審査ロジック
 async function runInspection(content, session) {
   // 1. GPTで整形
@@ -534,6 +455,85 @@ async function runInspection(content, session) {
 } 
   return { approved: true, content: parsed };
   }
+
+async function doApproval(interaction, parsed, session) {
+  const data = parsed;
+  const today = (new Date()).toISOString().slice(0,10);
+  const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;
+
+  // embed①：申請者への通知
+  const embed = new EmbedBuilder()
+    .setTitle("一時入国審査結果")
+    .setColor(0x3498db)
+    .setDescription(
+      "自動入国審査システムです。\n" +
+      `> 審査結果：**承認**`
+    )
+    .addFields([
+      { name: "申請者", value: data.mcid, inline: true },
+      { name: "申請日", value: today, inline: true },
+      { name: "入国目的", value: safeReplace(data.purpose), inline: true },
+      { name: "入国期間", value: safeReplace(`${data.start_datetime} ～ ${data.end_datetime}`), inline: false },
+      { name: "同行者", value:
+          Array.isArray(data.companions) && data.companions.length
+            ? data.companions.map(c => typeof c==="string"?c:c.mcid).join(", ")
+            : "なし",
+        inline: false
+      },
+      { name: "合流者", value:
+          Array.isArray(data.joiners) && data.joiners.length
+            ? data.joiners.join(", ")
+            : "なし",
+        inline: false
+      },
+      {
+        name: "【留意事項】",
+        value:
+          "・在留期間の延長が予定される場合、速やかにこのチャンネルでお知らせください。合計31日を超える場合は再申請が必要です。\n" +
+          "・申請内容に誤りがあった場合や法令違反時は承認が取り消される場合があります。\n" +
+          "・あなたの入国情報は適切な範囲で国民に共有されます。\n" +
+          "コムザール連邦共和国へようこそ。"
+      }
+    ]);
+
+  // ① ユーザーへの編集済み返信
+  await interaction.editReply({ embeds: [embed], components: [] });
+
+  // embed②：公示用
+  const publishEmbed = new EmbedBuilder()
+    .setTitle("【一時入国審査に係る入国者の公示】")
+    .setColor(0x27ae60)
+    .setDescription("以下の外国籍プレイヤーの入国が承認された為、以下の通り公示いたします。(外務省入管部)")
+    .addFields([
+      { name: "申請者", value: data.mcid, inline: true },
+      { name: "国籍", value: data.nation, inline: true },
+      { name: "申請日", value: today, inline: true },
+      { name: "入国目的", value: safeReplace(data.purpose), inline: true },
+      { name: "入国期間", value: safeReplace(`${data.start_datetime} ～ ${data.end_datetime}`), inline: false },
+      { name: "同行者", value:
+          Array.isArray(data.companions) && data.companions.length
+            ? data.companions.map(c => typeof c==="string"?c:c.mcid).join(", ")
+            : "なし",
+        inline: false
+      },
+      { name: "合流者", value:
+          Array.isArray(data.joiners) && data.joiners.length
+            ? data.joiners.join(", ")
+            : "なし",
+        inline: false
+      }
+    ]);
+
+  // ② 公示用チャンネルに送信
+  const publishChannelId = config.publishChannelId || config.logChannelId || LOG_CHANNEL_ID;
+  const publishChannel = bot.channels.cache.get(publishChannelId);
+  if (publishChannel?.isTextBased()) {
+    await publishChannel.send({ embeds: [publishEmbed] });
+  } else {
+    console.error("公示用チャンネルが見つかりません。ID:", publishChannelId);
+  }
+}
+
   
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {

@@ -488,7 +488,7 @@ bot.on('interactionCreate', async interaction => {
   session.data.originalInteraction   = interaction;
   session.data.parsed                = result.parsed;
 
-    // ── ① 合流者確認保留
+  // ── ① 合流者確認保留
   if (result.confirmJoiner && result.discordId) {
     const user = await bot.users.fetch(result.discordId);
     const dm   = await user.createDM();
@@ -501,11 +501,11 @@ bot.on('interactionCreate', async interaction => {
         .setLabel('いいえ').setStyle(ButtonStyle.Danger),
     );
     await dm.send({
-      content: `${session.data.mcid} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
+      content: `${session.data.joiner} さんから合流申請がありました。これは正しいですか？`,
       components: [row],
     });
     await interaction.editReply({
-      content: '申請を受け付けました。しばらくお待ちください。',
+      content: '申請を受け付けました。合流者の確認が完了するまでお待ちください。',
       components: []
     });
     session.logs.push(`[${nowJST()}] 合流者確認待ちで一時終了`);
@@ -527,7 +527,6 @@ bot.on('interactionCreate', async interaction => {
   session.logs.push(`[${nowJST()}] 承認処理開始`);
   return handleApprove(interaction, result.content, session);
 });
-
 
 bot.on('interactionCreate', async interaction => {
   if (!interaction.isButton()) return;

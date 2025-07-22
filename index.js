@@ -734,6 +734,7 @@ if (interaction.isChatInputCommand()) {
             });
             session.logs.push(`[${nowJST()}] 合流者確認待ちで一時終了`);
             return;
+          }
 
   // ── ② 却下
           if (result.approved === false) {
@@ -749,7 +750,6 @@ if (interaction.isChatInputCommand()) {
           session.logs.push(`[${nowJST()}] 承認処理開始`);
           return handleApprove(interaction, result.content, session);
         });
-        }
   
               if (result.approved && Object.keys(data).length) {
                 const fields = [

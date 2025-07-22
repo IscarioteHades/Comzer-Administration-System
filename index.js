@@ -338,6 +338,7 @@ async function doApproval(interaction, parsed, session) {
   } else {
     console.error("公示用チャンネルが見つかりません。ID:", publishChannelId);
   }
+}
 
 
 // ── 審査ロジック

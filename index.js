@@ -279,6 +279,7 @@ async function runInspection(content, session) {
       ],
     });
     parsed = JSON.parse(gptRes.choices[0].message.content);
+    session.data.parsed = parsed;
     if (parsed.companions && Array.isArray(parsed.companions)) {
         parsed.companions = parsed.companions.map(c =>
           typeof c === "string" ? { mcid: c } : c

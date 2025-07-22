@@ -447,9 +447,9 @@ async function runInspection(content, session) {
   if (parsed.joinerDiscordIds.length > 0 && hasAllRequired) {
   return {
   confirmJoiner: true,
-  discordId: String(parsed.joinerDiscordIds[0]),
+  discordId,
   parsed,
-  content: 'エラーが発生しました(if (result.confirmJoiner &&  result.discordId)関数)'    // ← ここを追加
+  content: '合流者確認中…'    // ← ここを追加
 };
 } 
   return { approved: true, content: parsed };

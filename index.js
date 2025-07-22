@@ -768,34 +768,6 @@ bot.on('messageCreate', async (m) =>  {
     roleId = Object.keys(ROLE_CONFIG)
       .find(r => m.member.roles.cache.has(r));
   }
-    if (roleId) {
-      try {
-        const hook = await getOrCreateHook(m.channel, roleId);
-
-        const files = [...m.attachments.values()]
-          .map(att => ({ attachment: att.url }));
-        const firstImg = files.find(f =>
-          /\.(png|jpe?g|gif|webp)$/i.test(f.attachment));
-
-        await hook.send({
-          embeds: [
-            embedPost.makeEmbed(
-              m.content || '(無言)',
-              roleId,
-              ROLE_CONFIG,
-              firstImg?.attachment
-            )
-          ],
-          files,
-          allowedMentions: { users: [], roles: [roleId] },
-        });
-
-        await m.delete().catch(() => {});
- } catch (err) {
-   console.error('[rolepost] resend error:', err);
- }
-      return;
-    }
   console.log('parentId:', m.channel.parentId, '（型：', typeof m.channel.parentId, '）');
   console.log('TICKET_CAT:', TICKET_CAT, '（型：', typeof TICKET_CAT, '）');
   console.log('mentions.has(bot.user):', m.mentions.has(bot.user));

@@ -262,48 +262,6 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-// 合流者応答処理
-bot.on('interactionCreate', async interaction => {
-  if (!interaction.isButton()) return;
-
-  const [ , answer, sessionId ] = interaction.customId.split('-');
-  if (answer !== 'yes' && answer !== 'no') return;
-
-  const session = sessions.get(sessionId);
-  if (!session) return;
-
-  // DM 応答なので deferUpdate でリアクションのみ返す
-  await interaction.deferUpdate();
-
-  // 保存しておいたオリジナル確定インタラクションと result を取り出し
-  const origResult = session.data.lastInspectionResult;
-  const origInt    = session.data.originalInteraction;
-
-  // 「いいえ」の場合は却下理由を書き換え
-  if (answer === 'no') {
-    origResult.content  = '合流者確認が取れなかったため却下します。';
-    origResult.approved = false;
-  } else {
-    // 「はい」の場合は承認フラグを立てる
-    origResult.approved = true;
-  }
-
-  // これで元の確定ハンドラと同じ判定ロジックに流し込み
-  if (origResult.approved) {
-    // 承認パス
-    await origInt.editReply({ content: null, embeds: [], components: [] });
-    return handleApprove(origInt, origResult.content, session);
-  } else {
-    // 却下パス
-    await origInt.editReply({
-      content: origResult.content,
-      components: []
-    });
-    session.logs.push(`[${nowJST()}] 合流者確認結果: no → 却下`);
-    return endSession(session.id, '却下');
-  }
-});
-
 // ── 審査ロジック
 async function runInspection(content, session) {
   // 1. GPTで整形
@@ -526,7 +484,52 @@ bot.on('interactionCreate', async interaction => {
 
   session.logs.push(`[${nowJST()}] ２回目押下 - runInspection 実行`);
   const result = await runInspection(inputText, session);
-  session.data.parsed = result.parsed
+  session.data.parsed = result.parsed;
+
+  // ── 合流者用ボタン応答ハンドラ ──
+// ── 合流者DMボタン応答ハンドラ ──
+bot.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  const [ , answer, sessionId ] = interaction.customId.split('-');
+  if (answer !== 'yes' && answer !== 'no') return;
+
+  const session = sessions.get(sessionId);
+  if (!session) return;
+
+  // DM 応答なので deferUpdate でリアクションのみ返す
+  await interaction.deferUpdate();
+
+  // 保存しておいたオリジナル確定インタラクションと result を取り出し
+  const origResult = session.data.lastInspectionResult;
+  const origInt    = session.data.originalInteraction;
+
+  // 「いいえ」の場合は却下理由を書き換え
+  if (answer === 'no') {
+    origResult.content  = '合流者確認が取れなかったため却下します。';
+    origResult.approved = false;
+  } else {
+    // 「はい」の場合は承認フラグを立てる
+    origResult.approved = true;
+  }
+
+  // これで元の確定ハンドラと同じ判定ロジックに流し込み
+  if (origResult.approved) {
+    // 承認パス
+    await origInt.editReply({ content: null, embeds: [], components: [] });
+    return handleApprove(origInt, origResult.content, session);
+  } else {
+    // 却下パス
+    await origInt.editReply({
+      content: origResult.content,
+      components: []
+    });
+    session.logs.push(`[${nowJST()}] 合流者確認結果: no → 却下`);
+    return endSession(session.id, '却下');
+  }
+});
+
+
   
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {

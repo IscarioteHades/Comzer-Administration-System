@@ -33,12 +33,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
       Routes.applicationCommands(config.clientId),
       { body }
     );
-    console.log("✅ 登録レスポンス全体:", res);
-    res.forEach(cmd => {
-      console.log(
-        `• name: ${cmd.name}, id: ${cmd.id}, description: ${cmd.description}`
-      );
-    });
     console.log(`✅ グローバルコマンド登録完了: ${res.length} 件`);
   } catch (err) {
     console.error('❌ コマンド登録エラー:', err);

@@ -891,6 +891,7 @@ bot.on('messageCreate', async (m) =>  {
         return m.reply({ content: `以下の内容で審査を実行しますか？\n${summary}`, components: [row] });
       }  
       }
+  }
   });
 
 

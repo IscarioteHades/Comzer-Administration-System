@@ -470,7 +470,7 @@ bot.on('interactionCreate', async interaction => {
   }
 
   // ★ ２回目以降の本処理 ★
-  await interaction.deferUpdate();
+  await interaction.deferReply();
 
   const { mcid, nation, period, companions = [], joiner } = session.data;
   const inputText = [
@@ -483,7 +483,6 @@ bot.on('interactionCreate', async interaction => {
 
   session.logs.push(`[${nowJST()}] ２回目押下 - runInspection 実行`);
   const result = await runInspection(inputText, session);
-  session.data.parsed = result.parsed;
   // result.confirmJoiner?, result.approved, result.content, result.discordId
 
   // ―― 合流者確認が必要な場合 ――

@@ -541,56 +541,55 @@ bot.on('interactionCreate', async interaction => {
   if (interaction.isButton()) {
     const [type, answer, sessionId] = interaction.customId.split('-');
     const session = sessions.get(sessionId);
-    if (!session) {
-      return interaction.reply({
-        content: 'セッションが見つかりません。最初からやり直してください。',
-        ephemeral: true
-      });
-    }
-    session.lastAction = Date.now();
+    if (customId.startsWith('joiner-')) {
+      if (!session) {
+        return interaction.reply({
+          content: 'セッションが見つかりません。最初からやり直してください。',
+          ephemeral: true
+        });
+      }
+      session.lastAction = Date.now();
 
     // ── 合流者確認用ボタン処理 ──
-    if (type === 'joiner') {
+      if (type === 'joiner') {
       // DM に送った「はい／いいえ」へのリアクション
-      if (answer === 'yes') {
+        if (answer === 'yes') {
         // 合流者確認 OK: 本来の承認処理へ
-        await interaction.update({
-          content: '合流者確認を承認しました。審査手続きを再開します…',
-          components: []
-        });
+          await interaction.update({
+            content: '合流者確認を承認しました。審査手続きを再開します…',
+            components: []
+          });
         // 例: doApproval を呼ぶ、あるいは残りの処理へフォールスルー
-        await doApproval(interaction, session.data.parsed, session);
-        await endSession(session.id, '承認');
-      } else {
+          await doApproval(interaction, session.data.parsed, session);
+          await endSession(session.id, '承認');
+        } else {
         // 合流者確認 NG: 却下用 embed
-        const companionStr = (session.data.companions || []).join(', ') || 'なし';
-        const joinerStr   = session.data.joiner || 'なし';
-        const inputText   = session.data.rawInputText || '';  // 必要に応じて
-        const details = Object.keys(session.data.parsed || {}).length
-          ? `申請者: ${session.data.parsed.mcid || '不明'}\n` +
+          const companionStr = (session.data.companions || []).join(', ') || 'なし';
+          const joinerStr   = session.data.joiner || 'なし';
+          const inputText   = session.data.rawInputText || '';  // 必要に応じて
+          const details = Object.keys(session.data.parsed || {}).length
+            ? `申請者: ${session.data.parsed.mcid || '不明'}\n` +
             `国籍: ${session.data.parsed.nation || '不明'}\n` +
             `入国目的: ${session.data.parsed.purpose || '不明'}\n` +
             `入国期間: ${session.data.parsed.start_datetime} ～ ${session.data.parsed.end_datetime}\n` +
             `同行者: ${companionStr}\n` +
             `合流者: ${joinerStr}\n`
-          : `申請内容: ${inputText}`;
-
-        const reasonMsg = '合流者確認が拒否されたため、申請は却下となりました。';
-
-        const rejectEmbed = new EmbedBuilder()
-          .setColor(0xe74c3c)
-          .setTitle("一時入国審査【却下】")
-          .setDescription(
-            `**申請が却下されました**\n\n` +
-            `【却下理由】\n${reasonMsg}\n\n` +
-            `【申請内容】\n${details}`
-          )
-          .setFooter({ text: "再申請の際は内容をよくご確認ください。" });
-
-        await interaction.update({ embeds: [rejectEmbed], components: [] });
-        await endSession(session.id, '却下');
+            : `申請内容: ${inputText}`;
+          const reasonMsg = '合流者確認が拒否されたため、申請は却下となりました。';
+          const rejectEmbed = new EmbedBuilder()
+            .setColor(0xe74c3c)
+            .setTitle("一時入国審査【却下】")
+            .setDescription(
+              `**申請が却下されました**\n\n` +
+              `【却下理由】\n${reasonMsg}\n\n` +
+              `【申請内容】\n${details}`
+            )
+            .setFooter({ text: "再申請の際は内容をよくご確認ください。" });
+          await interaction.update({ embeds: [rejectEmbed], components: [] });
+          await endSession(session.id, '却下');
+        }
+        return;  // joiner ボタンはここで終わり
       }
-      return;  // joiner ボタンはここで終わり
     }
     const id = interaction.customId ?? "";
     // 「プレフィックス-セッションID」という形式でないものはスキップ

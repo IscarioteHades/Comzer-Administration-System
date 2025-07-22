@@ -539,15 +539,9 @@ async function doApproval(interaction, parsed, session) {
 bot.on('interactionCreate', async interaction => {
   if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isChatInputCommand()) return;
   if (interaction.isButton()) {
-    const parts = interaction.customId.split('-');
-    const type = parts[0];
-  // 2) joiner のように 3要素、start/cancel のように2要素、どちらでも取れる
-    const answerOrNothing = parts[1];          // joiner なら yes/no、start/cancel なら sessionId
-    const sessionId = parts.slice(2).join('-') // joiner: [ 'joiner', 'yes', '<id>' ] → proper id
-                                           // start: [ 'start', '<id>' ] → join([]) ⇒ '' (we’ll fallback)
-    || answerOrNothing;                     // start: use parts[1] as the id
+    const [type, answer, sessionId] = interaction.customId.split('-');
     const session = sessions.get(sessionId);
-    if (interaction.customId.startsWith('joiner-')) {
+    if (customId.startsWith('joiner-')) {
       if (!session) {
         return interaction.reply({
           content: 'セッションが見つかりません。最初からやり直してください。',

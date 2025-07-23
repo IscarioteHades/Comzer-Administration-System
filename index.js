@@ -509,10 +509,10 @@ bot.on('interactionCreate', async interaction => {
           .setTitle("一時入国審査結果")
           .setColor(0x3498db)
           .addFields(fields)
-          .setDescription("
+          .setDescription(
                           "自動入国審査システムです。上記の通り申請されました\"__**一時入国審査**__\"について、審査が完了いたしましたので、以下の通り通知いたします。\n\n" +
           `> 審査結果：**承認**`
-                          ")
+                          )
           .addFields({
                     name: "【留意事項】", value:
                       "・在留期間の延長が予定される場合、速やかににこのチャンネルでお知らせください。但し、合計在留期間が31日を超える場合、新規に申請が必要です。、\n" +

@@ -354,7 +354,7 @@ async function runInspection(content, session) {
     }
   }
 
-  // 4. 合流者チェック（コムザール国民に実在確認）※旧コードの名簿参照部分を活用
+  // 4. 合流者チェック
   if (parsed.joiners && parsed.joiners.length > 0) {
   // ① 配列チェック
   const joinerList = parsed.joiners;

@@ -707,11 +707,11 @@ if (interaction.isChatInputCommand()) {
               
                 // ---- 公示用Embed転記 ----
                 const publishFields = [
-                  { name: "申請者", value: data.mcid, inline: true },
-                  { name: "国籍", value: data.nation, inline: true },  // ←ここを追加
+                  { name: "申請者", value: embedData.mcid, inline: true },
+                  { name: "国籍", value: embedData.nation, inline: true },  // ←ここを追加
                   { name: "申請日", value: nowJST(), inline: true },
-                  { name: "入国目的", value: safeReplace(data.purpose), inline: true },
-                  { name: "入国期間", value: safeReplace(`${data.start_datetime} ～ ${data.end_datetime}`), inline: false },
+                  { name: "入国目的", value: safeReplace(embedData.purpose), inline: true },
+                  { name: "入国期間", value: safeReplace(`${embedData.start_datetime} ～ ${embedData.end_datetime}`), inline: false },
                   { name: "同行者", value: companionStr, inline: false },
                   { name: "合流者", value: joinerStr, inline: false },
                 ];
@@ -737,10 +737,10 @@ if (interaction.isChatInputCommand()) {
             let details = "";
             if (Object.keys(data).length) {
               details =
-                `申請者: ${data.mcid || "不明"}\n` +
-                `国籍: ${data.nation || "不明"}\n` +
-                `入国目的: ${data.purpose || "不明"}\n` +
-                `入国期間: ${(data.start_datetime && data.end_datetime) ? `${data.start_datetime} ～ ${data.end_datetime}` : "不明"}\n` +
+                `申請者: ${embedData.mcid || "不明"}\n` +
+                `国籍: ${embedData.nation || "不明"}\n` +
+                `入国目的: ${embedData.purpose || "不明"}\n` +
+                `入国期間: ${(embedData.start_datetime && embedData.end_datetime) ? `${embedData.start_datetime} ～ ${embedData.end_datetime}` : "不明"}\n` +
                 `同行者: ${companionStr}\n` +
                 `合流者: ${joinerStr}\n`;
             } else {

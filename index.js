@@ -665,24 +665,24 @@ if (interaction.isChatInputCommand()) {
           }
 
           // --- Embed通知（承認／却下どちらもこの中で処理！）---
-          const data = typeof result.content === "object" ? result.content : {};
+          const embedData = typeof result.content === "object" ? result.content : {};
           const today = (new Date()).toISOString().slice(0, 10);
           const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;
           const companionStr =
-            Array.isArray(data.companions) && data.companions.length > 0
+            Array.isArray(embedData.companions) && embedData.companions.length > 0
               ? data.companions.map(c => typeof c === "string" ? c : c.mcid).filter(Boolean).join(", ")
               : "なし";
           const joinerStr =
-            Array.isArray(data.joiners) && data.joiners.length > 0
+            Array.isArray(embedData.joiners) && embedData.joiners.length > 0
               ? data.joiners.join(", ")
               : "なし";
   
-              if (result.approved && Object.keys(data).length) {
+              if (result.approved && Object.keys(embedData).length) {
                 const fields = [
-                  { name: "申請者", value: data.mcid, inline: true },
+                  { name: "申請者", value: embedData.mcid, inline: true },
                   { name: "申請日", value: nowJST(), inline: true },
-                  { name: "入国目的", value: safeReplace(data.purpose), inline: true },
-                  { name: "入国期間", value: safeReplace(`${data.start_datetime} ～ ${data.end_datetime}`), inline: false },
+                  { name: "入国目的", value: safeReplace(embedData.purpose), inline: true },
+                  { name: "入国期間", value: safeReplace(`${embedData.start_datetime} ～ ${embedData.end_datetime}`), inline: false },
                   { name: "同行者", value: companionStr, inline: false },
                   { name: "合流者", value: joinerStr, inline: false },
                 ];

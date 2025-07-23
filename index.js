@@ -471,11 +471,15 @@ bot.on('interactionCreate', async interaction => {
       
       if (anyNo) {
         // 却下時
+        const parsed = session.data.parsed;
+        const companionStr = Array.isArray(parsed.companions) && parsed.companions.length > 0
+          ? parsed.companions.map(c => typeof c === 'string' ? c : c.mcid).join(', ')
+          : 'なし';
+        const joinerStr = Array.isArray(parsed.joiners) && parsed.joiners.length > 0
+          ? parsed.joiners.join(', ')
+          : 'なし';
         const reasonMsg = "合流者が申請を承認しませんでした。合流者は正しいですか？"
         const formattedLog = session.logs.find(log => log.includes('整形結果'));
-        const parsed = formattedLog
-          ? JSON.parse(formattedLog.split('整形結果: ')[1])
-          : {};
         // --- デバッグ出力 ---
         console.log('[DEBUG] joinerResponse Handler parsed:', parsed);
         console.log('[DEBUG] parsed.mcid:', parsed.mcid);
@@ -505,10 +509,13 @@ bot.on('interactionCreate', async interaction => {
         return endSession(session.id, '却下');
       } else {
         // 承認時
-        const formattedLog = session.logs.find(log => log.includes('整形結果'));
-        const parsed = formattedLog
-          ? JSON.parse(formattedLog.split('整形結果: ')[1])
-          : {};
+        const parsed = session.data.parsed;
+        const companionStr = Array.isArray(parsed.companions) && parsed.companions.length > 0
+          ? parsed.companions.map(c => typeof c === 'string' ? c : c.mcid).join(', ')
+          : 'なし';
+        const joinerStr = Array.isArray(parsed.joiners) && parsed.joiners.length > 0
+          ? parsed.joiners.join(', ')
+          : 'なし';
         // --- デバッグ出力 ---
         console.log('[DEBUG] joinerResponse Handler parsed:', parsed);
         console.log('[DEBUG] parsed.mcid:', parsed.mcid);

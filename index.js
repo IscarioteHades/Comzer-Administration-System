@@ -734,6 +734,11 @@ if (interaction.isChatInputCommand()) {
           } else {
             try {
               embedData = JSON.parse(result.content);
+              const rawPeriod = embedData.period ?? embedData.期間;
+              if (rawPeriod && (!embedData.start_datetime || !embedData.end_datetime)) {
+                embedData.start_datetime = embedData.start_datetime || rawPeriod;
+                embedData.end_datetime   = embedData.end_datetime   || rawPeriod;
+                }
             } catch (e) {
               console.error("[ERROR] JSON parse failed:", e);
               embedData = {};

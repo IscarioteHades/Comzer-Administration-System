@@ -728,7 +728,17 @@ if (interaction.isChatInputCommand()) {
           }
 
           // --- Embed通知（承認／却下どちらもこの中で処理！）---
-          const embedData = typeof result.content === "object" ? result.content : {};
+          let embedData: Record<string, any> = {};
+          if (typeof result.content === "object") {
+            embedData = result.content;
+          } else {
+            try {
+              embedData = JSON.parse(result.content);
+            } catch (e) {
+              console.error("[ERROR] JSON parse failed:", e);
+              embedData = {};
+            }
+          }
           const today = (new Date()).toISOString().slice(0, 10);
           const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;
           const companionStr =

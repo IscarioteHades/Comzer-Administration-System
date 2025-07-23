@@ -500,10 +500,9 @@ bot.on('interactionCreate', async interaction => {
         const embed = new EmbedBuilder()
           .setColor(0xe74c3c)
           .setTitle("一時入国審査【却下】")
-          .addFields(
-            { name: "却下理由", value: reasonMsg },
-            ...details
-          )
+          .setDescription(
+                `**申請が却下されました**\n\n【却下理由】\n${reasonMsg}\n\n【申請内容】\n${details}`
+              )
           .setFooter({ text: "再申請の際は内容をよくご確認ください。" });
         await targetChannel.send({ embeds: [embed] });
         return endSession(session.id, '却下');
@@ -799,6 +798,15 @@ if (interaction.isChatInputCommand()) {
            else {
             // --- 却下時 ---
             let details = "";
+             console.log(
+               "[DEBUG] 審査データ:\n" +
+               `申請者: ${embedData.mcid || "不明"}\n` +
+               `国籍: ${embedData.nation || "不明"}\n` +
+               `入国目的: ${embedData.purpose || "不明"}\n` +
+               `入国期間: ${(embedData.start_datetime && embedData.end_datetime) ? `${embedData.start_datetime} ～ ${embedData.end_datetime}` : "不明"}\n` +
+               `同行者: ${companionStr}\n` +
+               `合流者: ${joinerStr}\n`
+             );
             if (Object.keys(embedData).length) {
               details =
                 `申請者: ${embedData.mcid || "不明"}\n` +

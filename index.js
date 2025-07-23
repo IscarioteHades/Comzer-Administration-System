@@ -37,7 +37,7 @@ import { GoogleSpreadsheet } from "google-spreadsheet";
 
 const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz';
 const API_URL   = "https://comzer-gov.net/wp-json/czr/v1/data-access";
-const API_TOKEN = "WAITOTTEMOBANANATONYUSUKIYADE2025";
+const API_TOKEN = process.env.YOUR_SECRET_API_KEY;
 
 // ── HTTP keep-alive サーバー（Render用）
 const port = process.env.PORT || 3000;

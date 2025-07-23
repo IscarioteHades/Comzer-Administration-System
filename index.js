@@ -686,6 +686,7 @@ if (interaction.isChatInputCommand()) {
           const joinData = typeof result.content === "object" ? result.content : {};
           if (result.approved && Array.isArray(joinData.joiners) && joinData.joinerDiscordIds?.length > 0) {
             // 1) 国民（合流者）へ DM
+            session.data.parsed = joinData;
             for (const discordId of joinData.joinerDiscordIds) {
               try {
                 const user = await bot.users.fetch(discordId);

@@ -443,6 +443,62 @@ async function runInspection(content, session) {
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
   if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isChatInputCommand()) return;
+  if (interaction.isButton() && interaction.customId.startsWith('joinerResponse-')) {
+    const [, answer, sessionId] = interaction.customId.split('-');
+    const session = sessions.get(sessionId);
+    if (!session) {
+      return interaction.reply({ content: 'セッションが存在しないか期限切れです。', ephemeral: true });
+    }
+    // ログに記録
+    session.logs.push(`[${nowJST()}] 合流者回答: ${interaction.user.id} → ${answer}`);
+
+    // 回答を格納
+    session.data.joinerResponses = session.data.joinerResponses || {};
+    session.data.joinerResponses[interaction.user.id] = answer;
+
+    await interaction.reply({ content: 'ご回答ありがとうございます。', ephemeral: true });
+
+    // すべての合流者から回答が揃ったかチェック
+    const expectCount = (session.data.joinerDiscordIds || []).length;
+    const gotCount    = Object.keys(session.data.joinerResponses).length;
+    if (gotCount === expectCount) {
+    // 一人でも「no」があれば却下、それ以外は承認
+      const anyNo = Object.values(session.data.joinerResponses).includes('no');
+      const targetChannel = await bot.channels.fetch(session.channelId);
+      if (!targetChannel?.isTextBased()) return endSession(session.id, anyNo ? '却下' : '承認');
+
+      if (anyNo) {
+        
+        const embed = new EmbedBuilder()
+          .setColor(0xe74c3c)
+          .setTitle("一時入国審査【却下】")
+          .setDescription("合流者が、申請を承認しませんでした。合流者は正しいですか？");
+        await targetChannel.send({ embeds: [embed] });
+        return endSession(session.id, '却下');
+      } else {
+        // 既存の承認処理を流用
+        const parsed = session.logs.find(log => log.includes('整形結果'))
+          ? JSON.parse(session.logs.find(log => log.includes('整形結果')).split('整形結果: ')[1])
+          : {};
+        // （承認時の Embed 作成ロジックをここにコピペ）
+        const fields = [
+          { name: "申請者",   value: parsed.mcid,                   inline: true },
+          { name: "国籍",     value: parsed.nation,                 inline: true },
+          { name: "申請日",   value: nowJST(),                      inline: true },
+          { name: "入国目的", value: parsed.purpose,                inline: true },
+          { name: "入国期間", value: `${parsed.start_datetime} ～ ${parsed.end_datetime}`, inline: false },
+        ];
+        const embed = new EmbedBuilder()
+          .setTitle("一時入国審査結果")
+          .setColor(0x3498db)
+          .addFields(fields)
+          .setDescription("> 審査結果：**承認**");
+        await targetChannel.send({ embeds: [embed] });
+        return endSession(session.id, '承認');
+      }
+    }
+    return;
+  }
   if (interaction.isButton()) {
     const id = interaction.customId ?? "";
     // 「プレフィックス-セッションID」という形式でないものはスキップ
@@ -571,6 +627,41 @@ if (interaction.isChatInputCommand()) {
             await interaction.editReply({ content: "⏳ 60秒間応答がなかったため、処理をタイムアウトで中断しました。再度申請してください。", components: [] });
             session.logs.push(`[${nowJST()}] タイムアウトエラー`);
             return endSession(session.id, "タイムアウト");
+          }
+          
+          // ── ここで合流者がいる場合は確認DMを送り、申請者には仮応答して一時停止 ─────────
+          const data = typeof result.content === "object" ? result.content : {};
+          if (result.approved && Array.isArray(data.joiners) && data.joinerDiscordIds?.length > 0) {
+            // 1) 国民（合流者）へ DM
+            for (const discordId of data.joinerDiscordIds) {
+              try {
+                const user = await bot.users.fetch(discordId);
+                const row = new ActionRowBuilder().addComponents(
+                  new ButtonBuilder()
+                  .setCustomId(`joinerResponse-yes-${session.id}`)
+                  .setLabel('はい')
+                  .setStyle(ButtonStyle.Success),
+                  new ButtonBuilder()
+                  .setCustomId(`joinerResponse-no-${session.id}`)
+                  .setLabel('いいえ')
+                  .setStyle(ButtonStyle.Danger),
+                );
+                await user.send({
+                  content: `申請者 ${data.mcid} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
+                  components: [row]
+                });
+              } catch (e) {
+                console.error(`[JoinerConfirm][Error] DM 送信失敗: ${discordId}`, e);
+              }
+            }
+            // 2) 申請者への仮応答
+            await interaction.editReply({
+              content: '申請を受け付けました。しばらくお待ち下さい',
+              components: []
+            });
+            session.step = 'waitingJoiner';
+            // セッションはまだ保持 => endSession しない
+            return;
           }
 
           // --- Embed通知（承認／却下どちらもこの中で処理！）---

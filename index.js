@@ -630,8 +630,8 @@ if (interaction.isChatInputCommand()) {
           }
           
           // ── ここで合流者がいる場合は確認DMを送り、申請者には仮応答して一時停止 ─────────
-          const data = typeof result.content === "object" ? result.content : {};
-          if (result.approved && Array.isArray(data.joiners) && data.joinerDiscordIds?.length > 0) {
+          const joinData = typeof result.content === "object" ? result.content : {};
+          if (result.approved && Array.isArray(joinData.joiners) && joinData.joinerDiscordIds?.length > 0) {
             // 1) 国民（合流者）へ DM
             for (const discordId of data.joinerDiscordIds) {
               try {

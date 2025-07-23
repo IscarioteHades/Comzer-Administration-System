@@ -670,11 +670,11 @@ if (interaction.isChatInputCommand()) {
           const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;
           const companionStr =
             Array.isArray(embedData.companions) && embedData.companions.length > 0
-              ? data.companions.map(c => typeof c === "string" ? c : c.mcid).filter(Boolean).join(", ")
+              ? embedData.companions.map(c => typeof c === "string" ? c : c.mcid).filter(Boolean).join(", ")
               : "なし";
           const joinerStr =
             Array.isArray(embedData.joiners) && embedData.joiners.length > 0
-              ? data.joiners.join(", ")
+              ? embedData.joiners.join(", ")
               : "なし";
   
               if (result.approved && Object.keys(embedData).length) {

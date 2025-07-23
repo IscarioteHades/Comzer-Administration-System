@@ -647,7 +647,7 @@ if (interaction.isChatInputCommand()) {
                   .setStyle(ButtonStyle.Danger),
                 );
                 await user.send({
-                  content: `申請者 ${data.mcid} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
+                  content: `申請者 ${joinData.mcid} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
                   components: [row]
                 });
               } catch (e) {

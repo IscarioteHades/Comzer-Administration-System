@@ -35,8 +35,8 @@ import {
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 
-const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz';
-const API_URL   = "https://comzer-gov.net/wp-json/czr/v1/data-access";
+const HEALTHZ_URL = process.env.HEALTHZ_URL;
+const API_URL   = process.env.API_URL
 const API_TOKEN = process.env.YOUR_SECRET_API_KEY;
 
 // ── HTTP keep-alive サーバー（Render用）

@@ -657,6 +657,7 @@ if (interaction.isChatInputCommand()) {
               }
             }
             // 2) 申請者への仮応答
+            session.data.joinerDiscordIds = joinData.joinerDiscordIds;
             await interaction.editReply({
               content: '申請を受け付けました。しばらくお待ち下さい',
               components: []

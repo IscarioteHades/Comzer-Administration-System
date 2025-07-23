@@ -444,7 +444,9 @@ async function runInspection(content, session) {
 bot.on('interactionCreate', async interaction => {
   if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isChatInputCommand()) return;
   if (interaction.isButton() && interaction.customId.startsWith('joinerResponse-')) {
-    const [, answer, sessionId] = interaction.customId.split('-');
+    const parts     = interaction.customId.split('-');
+    const answer    = parts[1];
+    const sessionId = parts.slice(2).join('-');  // join で元の session.id を復元
     const session = sessions.get(sessionId);
     if (!session) {
       return interaction.reply({ content: 'セッションが存在しないか期限切れです。', ephemeral: true });

@@ -470,11 +470,24 @@ bot.on('interactionCreate', async interaction => {
       if (!targetChannel?.isTextBased()) return endSession(session.id, anyNo ? '却下' : '承認');
 
       if (anyNo) {
-        
+        const reasonMsg = "合流者が申請を承認しませんでした。合流者は正しいですか？";
+        const details = [
+          { name: "申請者",   value: parsed.mcid,                   inline: true },
+          { name: "国籍",     value: parsed.nation,                 inline: true },
+          { name: "申請日",   value: nowJST(),                      inline: true },
+          { name: "入国目的", value: parsed.purpose,                inline: true },
+          { name: "入国期間", value: `${parsed.start_datetime} ～ ${parsed.end_datetime}`, inline: false },
+          { name: "同行者", value: companionStr || "なし", inline: false },
+          { name: "合流者", value: joinerStr   || "なし", inline: false },
+        ];
         const embed = new EmbedBuilder()
           .setColor(0xe74c3c)
           .setTitle("一時入国審査【却下】")
-          .setDescription("合流者が、申請を承認しませんでした。合流者は正しいですか？");
+          .addFields(
+            { name: "却下理由", value: reasonMsg },
+            { name: "申請内容", value: details }
+          )
+          .setFooter({ text: "再申請の際は内容をよくご確認ください。" });
         await targetChannel.send({ embeds: [embed] });
         return endSession(session.id, '却下');
       } else {
@@ -489,12 +502,26 @@ bot.on('interactionCreate', async interaction => {
           { name: "申請日",   value: nowJST(),                      inline: true },
           { name: "入国目的", value: parsed.purpose,                inline: true },
           { name: "入国期間", value: `${parsed.start_datetime} ～ ${parsed.end_datetime}`, inline: false },
+          { name: "同行者", value: companionStr || "なし", inline: false },
+          { name: "合流者", value: joinerStr   || "なし", inline: false },
         ];
         const embed = new EmbedBuilder()
           .setTitle("一時入国審査結果")
           .setColor(0x3498db)
           .addFields(fields)
-          .setDescription("> 審査結果：**承認**");
+          .setDescription("
+                          "自動入国審査システムです。上記の通り申請されました\"__**一時入国審査**__\"について、審査が完了いたしましたので、以下の通り通知いたします。\n\n" +
+          `> 審査結果：**承認**`
+                          ")
+          .addFields({
+                    name: "【留意事項】", value:
+                      "・在留期間の延長が予定される場合、速やかににこのチャンネルでお知らせください。但し、合計在留期間が31日を超える場合、新規に申請が必要です。、\n" +
+                      "・入国が承認されている期間中、申請内容に誤りがあることが判明したり、異なる行為をした場合、又は、コムザール連邦共和国の法令に違反したり、行政省庁の指示に従わなかった場合は、**承認が取り消される**場合があります。\n" +
+                      "・入国中、あなたは[コムザール連邦共和国の明示する法令](https://comzer-gov.net/laws/) を理解したものと解釈され、これの不知を理由に抗弁することはできません。\n" +
+                      "・あなたがコムザール連邦共和国及び国民に対して損害を生じさせた場合、行政省庁は、あなたが在籍する国家に対して、相当の対応を行う可能性があります。\n" +
+                      "・あなたの入国関連情報は、その期間中、公表が不適切と判断される情報を除外した上で、コムザール連邦共和国国民に対して自動的に共有されます。\n\n" +
+                      "コムザール連邦共和国へようこそ。"
+                  });
         await targetChannel.send({ embeds: [embed] });
         return endSession(session.id, '承認');
       }

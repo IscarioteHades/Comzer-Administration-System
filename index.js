@@ -735,7 +735,7 @@ if (interaction.isChatInputCommand()) {
            else {
             // --- 却下時 ---
             let details = "";
-            if (Object.keys(data).length) {
+            if (Object.keys(embedData).length) {
               details =
                 `申請者: ${embedData.mcid || "不明"}\n` +
                 `国籍: ${embedData.nation || "不明"}\n` +

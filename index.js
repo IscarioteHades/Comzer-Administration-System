@@ -854,7 +854,7 @@ if (interaction.isChatInputCommand()) {
           session.data.version = interaction.values[0];
           session.logs.push(`[${nowJST()}] 版選択: ${interaction.values[0]}`);
           session.step = 'mcid';
-          return m.reply({ content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)', components: [] });
+          return interaction.update({ content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)', components: [] });
         }
       }
     if (!interaction.replied && !interaction.deferred) {

@@ -458,7 +458,7 @@ bot.on('interactionCreate', async interaction => {
     session.data.joinerResponses = session.data.joinerResponses || {};
     session.data.joinerResponses[interaction.user.id] = answer;
 
-    await interaction.reply({ content: 'ご回答ありがとうございます。', ephemeral: true });
+    await interaction.reply({ content: '回答ありがとうございました。', ephemeral: true });
 
     // すべての合流者から回答が揃ったかチェック
     const expectCount = (session.data.joinerDiscordIds || []).length;

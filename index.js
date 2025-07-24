@@ -35,8 +35,8 @@ import {
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 
-const HEALTHZ_URL = 'https://comzer-gov.net/wp-json/czr/v1/healthz';
-const API_URL   = "https://comzer-gov.net/wp-json/czr/v1/data-access";
+const HEALTHZ_URL = process.env.HEALTHZ_URL;
+const API_URL   = process.env.API_URL
 const API_TOKEN = process.env.YOUR_SECRET_API_KEY;
 
 // ── HTTP keep-alive サーバー（Render用）
@@ -728,7 +728,22 @@ if (interaction.isChatInputCommand()) {
           }
 
           // --- Embed通知（承認／却下どちらもこの中で処理！）---
-          const embedData = typeof result.content === "object" ? result.content : {};
+          let embedData = {};
+          if (typeof result.content === "object") {
+            embedData = result.content;
+          } else {
+            try {
+              embedData = JSON.parse(result.content);
+              const rawPeriod = embedData.period ?? embedData.期間;
+              if (rawPeriod && (!embedData.start_datetime || !embedData.end_datetime)) {
+                embedData.start_datetime = embedData.start_datetime || rawPeriod;
+                embedData.end_datetime   = embedData.end_datetime   || rawPeriod;
+                }
+            } catch (e) {
+              console.error("[ERROR] JSON parse failed:", e);
+              embedData = {};
+            }
+          }
           const today = (new Date()).toISOString().slice(0, 10);
           const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;
           const companionStr =

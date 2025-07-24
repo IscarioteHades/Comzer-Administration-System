@@ -728,7 +728,7 @@ if (interaction.isChatInputCommand()) {
           }
 
           // --- Embed通知（承認／却下どちらもこの中で処理！）---
-          let embedData: Record<string, any> = {};
+          let embedData = {};
           if (typeof result.content === "object") {
             embedData = result.content;
           } else {

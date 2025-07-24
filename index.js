@@ -488,20 +488,21 @@ bot.on('interactionCreate', async interaction => {
         console.log('[DEBUG] parsed.end_datetime:', parsed.end_datetime);
         console.log('[DEBUG] companionStr:', companionStr);
         console.log('[DEBUG] joinerStr:', joinerStr);
-        const details = [
-          { name: "申請者",   value: parsed.mcid,                                         inline: true },
-          { name: "国籍",     value: parsed.nation,                                      inline: true },
-          { name: "申請日",   value: nowJST(),                                            inline: true },
-          { name: "入国目的", value: parsed.purpose,                                     inline: true },
-          { name: "入国期間", value: `${parsed.start_datetime} ～ ${parsed.end_datetime}`, inline: false },
-          { name: "同行者",   value: companionStr || "なし",                            inline: false },
-          { name: "合流者",   value: joinerStr   || "なし",                            inline: false },
-        ];
+        const detailLines = [
+          `申請者: ${parsed.mcid}`,
+          `国籍: ${parsed.nation}`,
+          `申請日: ${nowJST()}`,
+          `入国目的: ${parsed.purpose}`,
+          `入国期間: ${parsed.start_datetime} ～ ${parsed.end_datetime}`,
+          `同行者: ${companionStr || "なし"}`,
+          `合流者: ${joinerStr || "なし"}`,
+        ].join("\n");
         const embed = new EmbedBuilder()
           .setColor(0xe74c3c)
-          .setTitle("一時入国審査【却下")
-          .setDescription(`**申請が却下されました**\n\n【却下理由】\n${reasonMsg}`)  // 説明文から details を除去
-          .addFields(fields)  // フィールドとして渡す
+          .setTitle("一時入国審査【却下】")
+          .setDescription(
+            `**申請が却下されました**\n\n【却下理由】\n${reasonMsg}\n\n【申請内容】\n${detailLines}`
+          )
           .setFooter({ text: "再申請の際は内容をよくご確認ください。" });
         await targetChannel.send({ embeds: [embed] });
         return endSession(session.id, '却下');

@@ -92,7 +92,7 @@ export async function execute(interaction) {
       new EmbedBuilder()
         .setTitle('CAS自己診断プログラムを実行しました')
         .setDescription(
-          `✅ 最終診断時刻：${timeStr}\n\n` +
+          `✅ 最終診断時刻：${timeStr}\n` +
           `${citizenSheet}\n` +
           `${blacklistSheet}\n` +
           `${mojangApi}\n` +

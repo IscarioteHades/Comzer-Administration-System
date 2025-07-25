@@ -469,6 +469,9 @@ bot.on('interactionCreate', async interaction => {
       const anyNo = Object.values(session.data.joinerResponses).includes('no');
       const targetChannel = await bot.channels.fetch(session.channelId);
       if (!targetChannel?.isTextBased()) return endSession(session.id, anyNo ? '却下' : '承認');
+      const applicantMention = session.data.applicantDiscordId
+        ? `<@${session.data.applicantDiscordId}> `
+        : '';
       
       if (anyNo) {
         // 却下時
@@ -505,7 +508,10 @@ bot.on('interactionCreate', async interaction => {
             `**申請が却下されました**\n\n【却下理由】\n${reasonMsg}\n\n【申請内容】\n${detailLines}`
           )
           .setFooter({ text: "再申請の際は内容をよくご確認ください。" });
-        await targetChannel.send({ embeds: [embed] });
+        await targetChannel.send({ 
+          content: `${applicantMention}`,
+          embeds: [embed] 
+        });
         return endSession(session.id, '却下');
       } else {
         // 承認時
@@ -555,7 +561,10 @@ bot.on('interactionCreate', async interaction => {
         "コムザール連邦共和国へようこそ。"
     });
 
-  await targetChannel.send({ embeds: [embed] });
+  await targetChannel.send({ 
+    content: `${applicantMention}`,
+    embeds: [embed] 
+  });
   return endSession(session.id, '承認');
 }
     }
@@ -695,6 +704,7 @@ if (interaction.isChatInputCommand()) {
           const joinData = typeof result.content === "object" ? result.content : {};
           if (result.approved && Array.isArray(joinData.joiners) && joinData.joinerDiscordIds?.length > 0) {
             // 1) 国民（合流者）へ DM
+            session.data.applicantDiscordId = interaction.user.id;
             session.data.parsed = joinData;
             for (const discordId of joinData.joinerDiscordIds) {
               try {

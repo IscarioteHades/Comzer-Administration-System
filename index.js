@@ -255,6 +255,7 @@ bot.once("ready", () => {
 setInterval(() => {
   const now = Date.now();
   for (const session of sessions.values()) {
+    if (session.step === 'waitingJoiner') continue;
     if (now - session.lastAction > 10 * 60 * 1000) {
       session.logs.push(`[${nowJST()}] タイムアウト`);
       endSession(session.id, 'タイムアウト');

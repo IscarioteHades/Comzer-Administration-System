@@ -34,6 +34,7 @@ graph TD
   CheckBL --> MojangAPI --> CheckJoiner --> Result
   Result --> NotifyDiscord --> Publish
 
+
 【ファイル構成】
 index.js … メインBOT本体（申請フロー・審査ロジック・通知・ログ管理）
 blacklistCommands.js … ブラックリスト（国・MCID）操作コマンド管理

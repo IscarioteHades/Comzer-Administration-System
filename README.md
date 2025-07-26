@@ -37,24 +37,22 @@ graph TD
 ---
 ## システムフロー
 ```mermaid
-graph LR
-  A[ユーザー_Discord]
-  B[Discord_BOT_NodeJS_Koyeb]
-  C[OpenAI_API]
-  D[Google_Sheets_Blacklist]
-  E[WordPress_API_合流者認証]
-  F[Mojang_API]
-  G[PlayerDB_API]
-  H[Discord通知チャンネル]
+sequenceDiagram
+  participant User as User (Discord SSO)
+  participant WP as WordPress / CCR
+  participant miniOrange as miniOrange SocialLogin
+  participant Discord as Discord API
 
-  A --> B
-  B --> C
-  B --> D
-  B --> E
-  B --> F
-  B --> G
-  B --> H
+  User->>miniOrange: Discord OAuth2 認可
+  miniOrange-->>WP: Callback → wp_login
+  WP-->>User: wp_login hook
+  WP->>WP: ccr_register_or_update_user()
+  WP->>Discord: GET /users/@me
+  Discord-->>WP: username / avatar / id
+  WP->>WP: wp_citizen_data INSERT/UPDATE
+  WP-->>User: citizen_id 採番 / profile 同期
 ```
+
 【ファイル構成】
 index.js … メインBOT本体（申請フロー・審査ロジック・通知・ログ管理）
 blacklistCommands.js … ブラックリスト（国・MCID）操作コマンド管理

@@ -38,19 +38,46 @@ graph TD
 ## システムフロー
 ```mermaid
 sequenceDiagram
-  participant User as User (Discord SSO)
-  participant WP as WordPress / CCR
-  participant miniOrange as miniOrange SocialLogin
-  participant Discord as Discord API
+  participant User as User (Discord)
+  participant Bot as Discord (CAS BOT)
+  participant OpenAI as OpenAI API
+  participant Sheet as Google Sheets (Blacklist)
+  participant WP as WordPress API (Lollipop)
+  participant Mojang as Mojang API
+  participant PlayerDB as PlayerDB API
+  participant Koyeb as Koyeb Platform
+  participant Lollipop as Lollipop Server (MySQL+WP)
 
-  User->>miniOrange: Discord OAuth2 認可
-  miniOrange-->>WP: Callback → wp_login
-  WP-->>User: wp_login hook
-  WP->>WP: ccr_register_or_update_user()
-  WP->>Discord: GET /users/@me
-  Discord-->>WP: username / avatar / id
-  WP->>WP: wp_citizen_data INSERT/UPDATE
-  WP-->>User: citizen_id 採番 / profile 同期
+  User->>Bot: チケットで @CAS + ID
+  Bot-->>User: フォーム表示 (MCID・国籍・目的・同行者 etc)
+  User->>Bot: 入力・確定
+
+  Bot->>OpenAI: 自然文 → JSON構造化
+  OpenAI-->>Bot: 解析結果（start_datetime等）
+
+  Bot->>Sheet: ブラックリスト照合 (MCID, 国籍, 同行者)
+  Sheet-->>Bot: 判定結果
+
+  Bot->>Mojang: Java版MCID照合
+  Mojang-->>Bot: 結果
+  Bot->>PlayerDB: Bedrockユーザー照合
+  PlayerDB-->>Bot: 結果
+
+  Bot->>WP: 合流者存在確認 (/wp-json/czr/v1/healthz)
+  WP-->>Bot: 合流者存在 or 失敗
+
+  alt 承認または却下
+    Bot-->>User: 審査Embed通知
+    Bot->>Lollipop: citizen_id登録（INSERT/UPDATE）
+  end
+
+  Note over Koyeb, Bot: /shutdown 実行で Pause API 呼び出し
+  Bot->>Koyeb: POST /apps/:id/actions/pause
+  Koyeb-->>Bot: ステータス 200
+
+  Note over Koyeb, Bot: /start 実行で Resume API 呼び出し
+  Bot->>Koyeb: POST /apps/:id/actions/resume
+  Koyeb-->>Bot: ステータス 200
 ```
 
 【ファイル構成】

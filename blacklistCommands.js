@@ -136,7 +136,7 @@ export async function handleCommands(interaction) {
     userRoleIds = interaction.member.roles.cache.map(r => String(r.id));
   } else {
     // DM：REFERENCE_GUILD_ID で指定したギルドからフェッチ
-    const refGuildId = process.env.REFERENCE_GUILD_ID;
+    const refGuildId = "1188411576483590194";
     if (!refGuildId) {
       throw new Error("環境変数 REFERENCE_GUILD_ID が設定されていません");
     }

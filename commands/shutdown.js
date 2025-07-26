@@ -20,7 +20,7 @@ export async function execute(interaction) {
     executorRoleIds = interaction.member.roles.cache.map(r => r.id);
   } else {
     // DM：REFERENCE_GUILD_ID からメンバーをフェッチして取得
-    const refGuildId = process.env.REFERENCE_GUILD_ID;
+    const refGuildId = "1188411576483590194";
     if (!refGuildId) {
       throw new Error("環境変数 REFERENCE_GUILD_ID が設定されていません");
     }

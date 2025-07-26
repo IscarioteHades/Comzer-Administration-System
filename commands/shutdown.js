@@ -7,60 +7,62 @@ export const data = new SlashCommandBuilder()
   .setDescription('ボットを停止します');
 
 export async function execute(interaction) {
-  // ── 権限チェック ──
-  const allowedUserIds = (process.env.STOP_USER_IDS || '')
-    .split(',').map(id => id.trim()).filter(Boolean);
+  // ── 許可ロールIDの取得 ──
   const allowedRoleIds = (process.env.STOP_ROLE_IDS || '')
-    .split(',').map(id => id.trim()).filter(Boolean);
+    .split(',')
+    .map(id => id.trim())
+    .filter(Boolean);
 
-  let isAllowed = false;
-  if (!interaction.guildId) {
-    // DM ならユーザーIDのみ
-    isAllowed = allowedUserIds.includes(interaction.user.id);
+  // ── 実行者のロールID取得（ギルド or DM） ──
+  let executorRoleIds = [];
+  if (interaction.guildId) {
+    // ギルド内：通常の member.roles.cache から取得
+    executorRoleIds = interaction.member.roles.cache.map(r => r.id);
   } else {
-    // ギルドならユーザーID or ロールID
-    const memberRoles = interaction.member.roles.cache;
-    isAllowed = allowedUserIds.includes(interaction.user.id)
-             || allowedRoleIds.some(rid => memberRoles.has(rid));
+    // DM：REFERENCE_GUILD_ID からメンバーをフェッチして取得
+    const refGuildId = process.env.REFERENCE_GUILD_ID;
+    if (!refGuildId) {
+      throw new Error("環境変数 REFERENCE_GUILD_ID が設定されていません");
+    }
+    const guild = await interaction.client.guilds.fetch(refGuildId);
+    const member = await guild.members.fetch(interaction.user.id);
+    executorRoleIds = member.roles.cache.map(r => r.id);
   }
 
+  // ── 権限チェック ──
+  const isAllowed = allowedRoleIds.some(rid => executorRoleIds.includes(rid));
   if (!isAllowed) {
-    // 権限がなければ、そのコンテキストに合わせて reply
     return interaction.reply({
-      content: 'このコマンドを実行する権限がありません。',
-      // ギルド内なら Ephemeral、DM なら通常
-      ...(interaction.guildId ? { flags: 1 << 6 } : {})
+      content: '⚠️ このコマンドを実行する権限がありません。',
+      ephemeral: !!interaction.guildId,  // ギルド内はエフェメラル、DMは通常
     });
   }
 
-  // ── ACK ──
-  if (interaction.guildId) {
-    await interaction.deferReply({ flags: 1 << 6 });
-  } else {
-    await interaction.deferReply();
-  }
-  await interaction.editReply({ content: 'ボットをシャットダウンします…' });
+  // ── ACK／応答 ──
+  await interaction.deferReply({ ephemeral: true });
+  await interaction.editReply({ content: '⏱ ボットをサスペンド中です…' });
 
-  // 少し待ってから停止処理
+  // ── サスペンド（Pause）処理 ──
   setTimeout(async () => {
     try {
-      // 1) Discord クライアント停止
+      // 1) Discordクライアント停止
       interaction.client.destroy();
 
-      // 2) Koyeb 側を完全停止（stop）
+      // 2) Koyeb 上で「Pause」実行 → 自動再起動を抑制
       const apiToken = process.env.KOYEB_API_TOKEN;
       const appId    = process.env.KOYEB_APP_ID;
       if (apiToken && appId) {
         await axios.post(
-          `https://api.koyeb.com/v1/apps/${appId}/actions/stop`,
+          `https://api.koyeb.com/v1/apps/${appId}/actions/pause`,
           {},
           { headers: { Authorization: `Bearer ${apiToken}` } }
         );
+        console.log('[shutdown] Koyeb Pause API 呼び出し完了');
       } else {
-        console.warn('KOYEB_API_TOKEN または KOYEB_APP_ID が設定されていません。');
+        console.warn('[shutdown] KOYEB_API_TOKEN または KOYEB_APP_ID が未設定です。');
       }
     } catch (error) {
-      console.error('停止処理中にエラーが発生しました:', error);
+      console.error('🔴 サスペンド処理中にエラーが発生しました:', error);
     } finally {
       // 3) プロセス終了
       process.exit(0);

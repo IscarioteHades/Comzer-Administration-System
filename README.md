@@ -9,31 +9,30 @@ GoogleスプレッドシートとOpenAI APIを利用し、**ユーザー申請�
 ## システム全体フロー
 ```mermaid
 graph TD
-  User[申請者 (Discordユーザー)]
-  Ticket[Discord Ticketチャンネル<br/>@mention + "ID:CAS"]
+  User[申請者_Discordユーザー]
+  Ticket[Discord_Ticketチャンネル_ID:CAS]
   StartFlow[申請フロー開始]
-  Version[ゲーム版の選択（Java/BE）]
+  Version[ゲーム版選択_Java/BE]
   Input1[MCID入力]
   Input2[国籍入力]
   Input3[目的・期間入力]
   Input4[同行者入力]
   Input5[合流者入力]
-  Confirm[内容確認→確定ボタン]
+  Confirm[内容確認→確定]
 
-  GPT[OpenAI GPTで整形<br/>(prompts.js)]
-  CheckBL[ブラックリスト判定<br/>(Googleスプレッドシート)]
-  CheckJoiner[合流者の存在チェック<br/>(WordPress連携API)]
-  MojangAPI[Mojang / PlayerDB API照合]
-  Result[承認/却下 Embed作成]
+  GPT[GPTで整形]
+  CheckBL[ブラックリスト照合]
+  CheckJoiner[合流者認証_WP_API]
+  MojangAPI[MCID存在チェック]
+  Result[承認/却下Embed生成]
 
-  NotifyDiscord[審査結果をDiscordへ通知]
-  Publish[公示チャンネルへ送信]
+  Notify[Discord通知]
+  Publish[公示チャンネル投稿]
 
   User -->|チケット作成| Ticket
   Ticket --> StartFlow --> Version --> Input1 --> Input2 --> Input3 --> Input4 --> Input5 --> Confirm
-  Confirm --> GPT --> CheckBL
-  CheckBL --> MojangAPI --> CheckJoiner --> Result
-  Result --> NotifyDiscord --> Publish
+  Confirm --> GPT --> CheckBL --> MojangAPI --> CheckJoiner --> Result
+  Result --> Notify --> Publish
 ```
 
 【ファイル構成】

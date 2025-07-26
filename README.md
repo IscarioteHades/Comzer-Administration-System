@@ -38,14 +38,14 @@ graph TD
 ## システムフロー
 ```mermaid
 graph LR
-  A[ユーザー (Discord)]
-  B[Discord BOT<br/>(Node.js on Koyeb)]
-  C[OpenAI API]
-  D[Google Sheets<br/>(ブラックリスト)]
-  E[WordPress API<br/>合流者認証]
-  F[Mojang API]
-  G[PlayerDB API]
-  H[Discordチャンネル（通知）]
+  A[ユーザー_Discord]
+  B[Discord_BOT_NodeJS_Koyeb]
+  C[OpenAI_API]
+  D[Google_Sheets_Blacklist]
+  E[WordPress_API_合流者認証]
+  F[Mojang_API]
+  G[PlayerDB_API]
+  H[Discord通知チャンネル]
 
   A --> B
   B --> C

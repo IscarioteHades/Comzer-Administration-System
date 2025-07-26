@@ -7,7 +7,6 @@
 GoogleスプレッドシートとOpenAI APIを利用し、**ユーザー申請内容の自動整形・ブラックリスト判定・承認/却下通知まで全自動化**しています。
 ---
 ## システム全体フロー
-```mermaid
 graph TD
   User[申請者 (Discordユーザー)]
   Ticket[Discord Ticketチャンネル<br/>@mention + "ID:CAS"]
@@ -34,7 +33,6 @@ graph TD
   Confirm --> GPT --> CheckBL
   CheckBL --> MojangAPI --> CheckJoiner --> Result
   Result --> NotifyDiscord --> Publish
-```
 
 【ファイル構成】
 index.js … メインBOT本体（申請フロー・審査ロジック・通知・ログ管理）

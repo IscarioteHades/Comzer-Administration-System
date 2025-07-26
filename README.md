@@ -6,7 +6,7 @@
 このリポジトリは、コムザール連邦共和国（Minecraft仮想国家）の入国審査業務を**Discord上で自動化**するためのBOTを管理・開発するものです。  
 GoogleスプレッドシートとOpenAI APIを利用し、**ユーザー申請内容の自動整形・ブラックリスト判定・承認/却下通知まで全自動化**しています。
 ---
-## システム全体フロー
+## 審査フロー
 ```mermaid
 graph TD
   User[申請者_Discordユーザー]
@@ -34,7 +34,29 @@ graph TD
   Confirm --> GPT --> CheckBL --> MojangAPI --> CheckJoiner --> Result
   Result --> Notify --> Publish
 ```
+---
+## システムフロー
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User   as User (Discord&nbsp;SSO)
+    participant WP     as WordPress / CCR
+    participant Mini   as miniOrange&nbsp;SocialLogin
+    participant API    as Discord&nbsp;API
 
+    User  ->> WP   : ログイン要求
+    WP    ->> Mini : Discord OAuth2 認可
+    Mini  -->> WP  : Callback → wp_login
+
+    WP    ->> WP   : wp_login hook
+    WP    ->> WP   : ccr_register_or_update_user()
+
+    WP    ->> API  : GET /users/@me
+    API   -->> WP  : username / avatar / id
+
+    WP    ->> WP   : wp_citizen_data INSERT / UPDATE
+    WP    --> WP   : citizen_id 採番 / profile 同期
+```
 【ファイル構成】
 index.js … メインBOT本体（申請フロー・審査ロジック・通知・ログ管理）
 blacklistCommands.js … ブラックリスト（国・MCID）操作コマンド管理

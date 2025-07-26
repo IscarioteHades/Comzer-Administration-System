@@ -7,17 +7,34 @@
 GoogleスプレッドシートとOpenAI APIを利用し、**ユーザー申請内容の自動整形・ブラックリスト判定・承認/却下通知まで全自動化**しています。
 ---
 ## システム全体フロー
-Discord (Ticketチャンネル)
-        │  申請者による審査開始
-        ▼
-Node.js BOT（Render上で常時稼働）
-        │  ├ 審査フローUI・入力値受付
-        │  ├ OpenAI GPTで申請内容整形
-        │  ├ 各種API/Googleスプレッドシートで判定
-        │  └ 承認／却下Embed通知
-        ▼
-Discordへ審査結果Embedを返信
-※ 旧バージョンではOCI/Pipedreamなども併用されていたが、現行設計はNode.js BOTのみで審査・判定～通知まで全完結
+```mermaid
+graph TD
+  User[申請者 (Discordユーザー)]
+  Ticket[Discord Ticketチャンネル<br/>@mention + "ID:CAS"]
+  StartFlow[申請フロー開始]
+  Version[ゲーム版の選択（Java/BE）]
+  Input1[MCID入力]
+  Input2[国籍入力]
+  Input3[目的・期間入力]
+  Input4[同行者入力]
+  Input5[合流者入力]
+  Confirm[内容確認→確定ボタン]
+
+  GPT[OpenAI GPTで整形<br/>(prompts.js)]
+  CheckBL[ブラックリスト判定<br/>(Googleスプレッドシート)]
+  CheckJoiner[合流者の存在チェック<br/>(WordPress連携API)]
+  MojangAPI[Mojang / PlayerDB API照合]
+  Result[承認/却下 Embed作成]
+
+  NotifyDiscord[審査結果をDiscordへ通知]
+  Publish[公示チャンネルへ送信]
+
+  User -->|チケット作成| Ticket
+  Ticket --> StartFlow --> Version --> Input1 --> Input2 --> Input3 --> Input4 --> Input5 --> Confirm
+  Confirm --> GPT --> CheckBL
+  CheckBL --> MojangAPI --> CheckJoiner --> Result
+  Result --> NotifyDiscord --> Publish
+```
 
 【ファイル構成】
 index.js … メインBOT本体（申請フロー・審査ロジック・通知・ログ管理）

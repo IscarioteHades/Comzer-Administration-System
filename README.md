@@ -37,25 +37,23 @@ graph TD
 ---
 ## システムフロー
 ```mermaid
-sequenceDiagram
-    autonumber
-    participant User   as User (Discord&nbsp;SSO)
-    participant WP     as WordPress / CCR
-    participant Mini   as miniOrange&nbsp;SocialLogin
-    participant API    as Discord&nbsp;API
+graph LR
+  A[ユーザー (Discord)]
+  B[Discord BOT<br/>(Node.js on Koyeb)]
+  C[OpenAI API]
+  D[Google Sheets<br/>(ブラックリスト)]
+  E[WordPress API<br/>合流者認証]
+  F[Mojang API]
+  G[PlayerDB API]
+  H[Discordチャンネル（通知）]
 
-    User  ->> WP   : ログイン要求
-    WP    ->> Mini : Discord OAuth2 認可
-    Mini  -->> WP  : Callback → wp_login
-
-    WP    ->> WP   : wp_login hook
-    WP    ->> WP   : ccr_register_or_update_user()
-
-    WP    ->> API  : GET /users/@me
-    API   -->> WP  : username / avatar / id
-
-    WP    ->> WP   : wp_citizen_data INSERT / UPDATE
-    WP    --> WP   : citizen_id 採番 / profile 同期
+  A --> B
+  B --> C
+  B --> D
+  B --> E
+  B --> F
+  B --> G
+  B --> H
 ```
 【ファイル構成】
 index.js … メインBOT本体（申請フロー・審査ロジック・通知・ログ管理）

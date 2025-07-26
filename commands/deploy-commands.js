@@ -11,13 +11,6 @@ const { clientId, guildId } = config;
 
 (async () => {
   try {
-    // ———— ギルドコマンドの一括削除 ————
-    await rest.put(
-      Routes.applicationGuildCommands(clientId, guildId),
-      { body: [] }
-    );
-
-    // ———— グローバルコマンドの一括削除 ————
     await rest.put(
       Routes.applicationCommands(clientId),
       { body: [] }

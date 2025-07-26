@@ -127,21 +127,34 @@ export const commands = [
 // ----- コマンド実行時のハンドラ -----
 export async function handleCommands(interaction) {
   if (!interaction.isChatInputCommand()) return false;
-
   const name = interaction.commandName;
 
-  // 権限チェック
+  // ── 実行者のロールID取得（ギルド or DM）
+  let userRoleIds = [];
+  if (interaction.guild) {
+    // ギルド内：通常通り interaction.member から取得
+    userRoleIds = interaction.member.roles.cache.map(r => String(r.id));
+  } else {
+    // DM：REFERENCE_GUILD_ID で指定したギルドからフェッチ
+    const refGuildId = process.env.REFERENCE_GUILD_ID;
+    if (!refGuildId) {
+      throw new Error("環境変数 REFERENCE_GUILD_ID が設定されていません");
+    }
+    const guild = await interaction.client.guilds.fetch(refGuildId);
+    const member = await guild.members.fetch(interaction.user.id);
+    userRoleIds = member.roles.cache.map(r => String(r.id));
+  }
+
+  // ── 許可済みロールIDリスト
   const ALLOWED_ROLE_IDS = [
     ...(process.env.ROLLID_MINISTER ? process.env.ROLLID_MINISTER.split(',') : []),
     ...(process.env.ROLLID_DIPLOMAT ? process.env.ROLLID_DIPLOMAT.split(',') : []),
   ].map(x => x.trim()).filter(Boolean);
 
-  const userRoleIds = interaction.member?.roles?.cache.map(r => String(r.id));
-  const hasRole = ALLOWED_ROLE_IDS.map(r => String(r)).some(roleId => userRoleIds.includes(roleId));
+  const hasRole = ALLOWED_ROLE_IDS.some(roleId => userRoleIds.includes(roleId));
 
   console.log('【権限チェック】有効ロールID:', ALLOWED_ROLE_IDS);
   console.log('【権限チェック】ユーザーロールID:', userRoleIds);
-  console.log('【権限チェック】member:', interaction.member);
   console.log('【権限チェック】hasRole:', hasRole);
 
   if (!hasRole) {
@@ -150,10 +163,7 @@ export async function handleCommands(interaction) {
       console.log("REPLY DEBUG", {
         where: "権限チェック",
         command: name,
-        reply: "権限エラー文言",
         hasRole, ALLOWED_ROLE_IDS, userRoleIds,
-        replied: interaction.replied,
-        deferred: interaction.deferred
       });
       await interaction.reply({ content: "君はステージが低い。君のコマンドを受け付けると君のカルマが私の中に入って来て私が苦しくなる。(権限エラー)", ephemeral: true });
     }

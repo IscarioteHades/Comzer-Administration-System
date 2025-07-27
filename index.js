@@ -720,7 +720,7 @@ if (interaction.isChatInputCommand()) {
                   .setStyle(ButtonStyle.Danger),
                 );
                 await user.send({
-                  content: `申請者 ${joinData.mcid} さんからあなたが合流者だと申請がありました。これは正しいですか？`,
+                  content: `外務省入管局からの確認通知です。申請者 ${joinData.mcid} さんからあなたが国内で合流するユーザーである旨の申請がありました。この申請はお間違えございませんか？(心当たりがない場合は、「いいえ」をご選択ください。)`,
                   components: [row]
                 });
               } catch (e) {

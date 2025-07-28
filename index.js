@@ -89,10 +89,12 @@ const today = (new Date()).toISOString().slice(0,10);
 const prompt = extractionPrompt.replace("__TODAY__", today);
 const DIPLOMAT_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/5dwbifgYfsdWpZx/preview'; // ← 外務省アイコン URL
 const MINISTER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/qGWt4rftd9ygKdi/preview'; // ← 閣僚議会議員アイコン URL
-
-// 1. 環境変数からロールIDリストを取得（例: 大臣・外交官どちらも）
+const EXAMINER_ICON_URL = ''
+  
+// 1. 環境変数からロールIDリストを取得（例: 閣僚・外交官どちらも）
 const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
 const MINISTER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').filter(Boolean);
+const EXAMINER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').filter(Boolean);
 
 // 2. 各役職ロールごとの設定（ここに削除権限リストも入れる！）
 const ROLE_CONFIG = {
@@ -116,6 +118,14 @@ const ROLE_CONFIG = {
       canDelete: [...MINISTER_ROLE_IDS], 
     }])
   ),
+  ...Object.fromEntries(
+    EXAMINER_ROLE_IDS.map(roleId => [ roleId, {
+      embedName:   '入国審査担当官',
+      embedIcon:   EXAMINER_ICON_URL,
+      webhookName: 'コムザール連邦共和国 大統領府',
+      webhookIcon: EXAMINER_ICON_URL,
+      canDelete: [...EXAMINER_ROLE_IDS], 
+    }])
 };
   Object.entries(ROLE_CONFIG).forEach(([roleId, cfg]) => {
     // embedName/embedIcon の内容を

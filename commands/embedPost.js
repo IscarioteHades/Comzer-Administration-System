@@ -4,6 +4,7 @@ import {
   StringSelectMenuBuilder,
   EmbedBuilder,
 } from 'discord.js';
+import { ROLE_CONFIG } from '../config/roles.js';
 
 /* --------------------------------------------------
  * 1. /rolepost スラッシュコマンド定義
@@ -52,7 +53,7 @@ export async function execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
 
     const member       = interaction.member;
-    const clientConfig = interaction.client.ROLE_CONFIG || {};
+    const clientConfig = interaction.client.ROLE_CONFIG || ROLE_CONFIG;
     const channelId    = interaction.channelId;
     const userId       = interaction.user.id;
 
@@ -62,18 +63,20 @@ export async function execute(interaction) {
       return interaction.editReply('役職発言モードを **OFF** にしました。');
     }
 
-    // 環境変数からロールIDリスト
-    const diplomatRoles = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
-    const ministerRoles = (process.env.ROLLID_MINISTER  || '').split(',').filter(Boolean);
-
-    // ユーザーのロールID一覧
+    // 1) ユーザーの Discord ロールID一覧を取得
     const userRoles = member.roles.cache.map(r => r.id);
 
-    // 保持モード判定
-    const matched = [
-      ...diplomatRoles.filter(rid => userRoles.includes(rid)).map(() => ({ mode: 'diplomat', rid: diplomatRoles[0] })),
-      ...ministerRoles.filter(rid => userRoles.includes(rid)).map(() => ({ mode: 'minister', rid: ministerRoles[0] }))
-    ];
+    // 2) ROLE_CONFIG を走査して、持っている envVar（役職ロール）を探す
+    const matched = Object.entries(clientConfig)
+      .flatMap(([key, cfg]) => {
+        const ids = (process.env[cfg.envVar] || "")
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+        return ids.some(rid => userRoles.includes(rid))
+          ? [{ key, rid: ids[0], cfg }]
+          : [];
+      });
 
     if (matched.length === 0) {
       return interaction.editReply('役職ロールを保有していません。');
@@ -81,17 +84,14 @@ export async function execute(interaction) {
 
     // 複数モード → 選択メニュー
     if (matched.length > 1) {
-      const options = matched.map(({ mode, rid }) => {
-        const cfg = clientConfig[rid] || {};
-        return {
-          label: mode === 'diplomat' ? '外交官(外務省 総合外務部職員)' : '閣僚会議議員',
-          value: rid,                     // **ここで roleId を返す**
-          emoji: cfg.emoji,
-        };
-      });
+      const options = matched.map(({ key, rid, cfg }) => ({
+        label: cfg.label,
+        value: rid,
+        emoji: cfg.emoji,
+      }));
 
       const menu = new StringSelectMenuBuilder()
-        .setCustomId(`rolepost-choose-${channelId}-${userId}`) // チャンネルも含めて一意化
+        .setCustomId(`rolepost-choose-${channelId}-${userId}`)
         .setPlaceholder('モードを選択してください')
         .addOptions(options);
 
@@ -103,16 +103,21 @@ export async function execute(interaction) {
     }
 
     // 単一モード → そのまま ON
-    const { rid } = matched[0];
-    setActive(channelId, userId, rid);
-    const modeName = matched[0].mode === 'diplomat' ? '外交官モード' : '閣僚モード';
-    return interaction.editReply(`役職発言モードを **ON** にしました。（${modeName}）`);
+    if (matched.length === 1) {
+      const { rid, cfg } = matched[0];
+      setActive(channelId, userId, rid);
+      return interaction.editReply(
+        `役職発言モードを **ON** にしました。（${cfg.embedName}）`
+      );
+    }
 
   } catch (err) {
     console.error('[embedPost] execute error:', err);
-    // defer していれば followUp、していなければ reply
     const method = interaction.deferred ? 'followUp' : 'reply';
-    return interaction[method]({ content: '⚠️ コマンド実行中にエラーが発生しました。', ephemeral: true });
+    return interaction[method]({
+      content: '⚠️ コマンド実行中にエラーが発生しました。',
+      ephemeral: true,
+    });
   }
 }
 
@@ -131,9 +136,10 @@ export async function handleRolepostSelect(interaction) {
     const roleId = interaction.values[0];
     setActive(channelId, userId, roleId);
 
-    const modeName = (process.env.ROLLID_DIPLOMAT || '').split(',').includes(roleId)
-      ? '外交官モード'
-      : '閣僚モード';
+    // 選択された roleId から ROLE_CONFIG を逆引き
+    const entry = Object.values(interaction.client.ROLE_CONFIG)
+      .find(cfg => (process.env[cfg.envVar] || "").split(',').includes(roleId));
+    const modeName = entry?.embedName || '不明なモード';
 
     await interaction.update({
       content: `役職発言モードを **ON** にしました。（${modeName}）`,
@@ -141,7 +147,6 @@ export async function handleRolepostSelect(interaction) {
     });
   } catch (err) {
     console.error('[embedPost] handleSelect error:', err);
-    // 更新に失敗してももう一度応答を試みない
   }
 }
 

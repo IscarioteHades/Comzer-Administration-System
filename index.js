@@ -126,6 +126,7 @@ const ROLE_CONFIG = {
       webhookIcon: EXAMINER_ICON_URL,
       canDelete: [...EXAMINER_ROLE_IDS], 
     }])
+  ),
 };
   Object.entries(ROLE_CONFIG).forEach(([roleId, cfg]) => {
     // embedName/embedIcon の内容を

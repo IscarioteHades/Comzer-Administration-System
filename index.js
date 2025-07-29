@@ -89,7 +89,7 @@ const today = (new Date()).toISOString().slice(0,10);
 const prompt = extractionPrompt.replace("__TODAY__", today);
 const DIPLOMAT_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/5dwbifgYfsdWpZx/preview'; // ← 外務省アイコン URL
 const MINISTER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/qGWt4rftd9ygKdi/preview'; // ← 閣僚議会議員アイコン URL
-const EXAMINER_ICON_URL = ''
+const EXAMINER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/NEsrzngYJEHZwTn/preview';
   
 // 1. 環境変数からロールIDリストを取得（例: 閣僚・外交官どちらも）
 const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);

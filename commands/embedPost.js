@@ -4,7 +4,7 @@ import {
   StringSelectMenuBuilder,
   EmbedBuilder,
 } from 'discord.js';
-import { ROLE_CONFIG } from '../config/roles.js';
+import { ROLE_CONFIG } from './index.js';
 
 /* --------------------------------------------------
  * 1. /rolepost スラッシュコマンド定義

@@ -65,13 +65,8 @@ export async function execute(interaction) {
 
     // ROLE_CONFIG を走査し、マッチする roleId を探す
     const matched = Object.entries(clientConfig)
-      .flatMap(([roleId, cfg]) => {
-        const ids = Array.isArray(cfg.roleIds) ? cfg.roleIds : 
-          (process.env[cfg.envVar] || '').split(',').map(s => s.trim()).filter(Boolean);
-        const found = ids.find(id => userRoles.includes(id));
-        return found ? { roleId: found, cfg } : null;
-      })
-      .filter(Boolean);
+      .filter(([roleId]) => userRoles.includes(roleId))
+      .map(([roleId, cfg]) => ({ roleId, cfg }));
 
     if (matched.length === 0) {
       return interaction.editReply('役職ロールを保有していません。');

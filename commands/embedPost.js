@@ -86,7 +86,7 @@ export async function execute(interaction) {
       const options = matched.map(({ mode, rid }) => {
         const cfg = clientConfig[rid] || {};
         return {
-          label: mode === 'diplomat' ? '外交官(外務省 総合外務部職員)' : mode === 'minister' ? '閣僚会議議員' : '入国審査担当官'
+          label: mode === 'diplomat' ? '外交官(外務省 総合外務部職員)' : mode === 'minister' ? '閣僚会議議員' : '入国審査担当官',
           value: rid,                     // **ここで roleId を返す**
           emoji: cfg.emoji,
         };

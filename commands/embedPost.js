@@ -60,10 +60,10 @@ export async function execute(interaction) {
       return interaction.editReply('役職発言モードを **OFF** にしました。');
     }
 
-    // 1) ユーザーの Discord ロールID一覧を取得
+    // ユーザーの Discord ロールID一覧を取得
     const userRoles = member.roles.cache.map(r => r.id);
 
-    // 2) ROLE_CONFIG のキー（roleId）と照合
+    // ROLE_CONFIG のキー（roleId）と照合
     const matched = Object.entries(clientConfig)
       .filter(([rid]) => userRoles.includes(rid))
       .map(([rid, cfg]) => ({ rid, cfg }));
@@ -77,6 +77,7 @@ export async function execute(interaction) {
       const options = matched.map(({ rid, cfg }) => ({
         label: cfg.embedName,
         value: rid,
+        emoji: cfg.embedIcon || undefined,
       }));
 
       const menu = new StringSelectMenuBuilder()
@@ -121,8 +122,8 @@ export async function handleRolepostSelect(interaction) {
     const roleId = interaction.values[0];
     setActive(channelId, userId, roleId);
 
-    const entry = interaction.client.ROLE_CONFIG[roleId];
-    const modeName = entry?.embedName || '不明なモード';
+    const cfg = interaction.client.ROLE_CONFIG[roleId];
+    const modeName = cfg?.embedName || '不明なモード';
 
     await interaction.update({
       content: `役職発言モードを **ON** にしました。（${modeName}）`,

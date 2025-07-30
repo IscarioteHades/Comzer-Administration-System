@@ -49,6 +49,15 @@ export function setInactive(channelId, userId) {
 export async function execute(interaction) {
   try {
     await interaction.deferReply({ ephemeral: true });
+    console.log('--- DEBUG /rolepost ---');
+    console.log('Loaded ROLE_CONFIG keys:', Object.keys(interaction.client.ROLE_CONFIG));
+    console.log('Environment EXAMINER_ROLE_IDS:', process.env.ROLLID_EXAMINER);
+    console.log('User roles from Discord:', member.roles.cache.map(r => r.id));
+    console.log('Matched entries:', 
+                Object.entries(interaction.client.ROLE_CONFIG)
+                .filter(([roleId]) => member.roles.cache.map(r => r.id).includes(roleId))
+               );
+console.log('--- end DEBUG ---');
     const member       = interaction.member;
     const clientConfig = interaction.client.ROLE_CONFIG || {};
     const channelId    = interaction.channelId;

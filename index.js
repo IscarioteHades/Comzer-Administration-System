@@ -94,7 +94,7 @@ const EXAMINER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/NEsrz
 // 1. 環境変数からロールIDリストを取得（例: 閣僚・外交官どちらも）
 const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
 const MINISTER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').filter(Boolean);
-const EXAMINER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').filter(Boolean);
+const EXAMINER_ROLE_IDS = (process.env.ROLLID_EXAMINER || '').split(',').filter(Boolean);
 
 // 2. 各役職ロールごとの設定（ここに削除権限リストも入れる！）
 const ROLE_CONFIG = {

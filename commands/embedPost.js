@@ -13,7 +13,7 @@ export const data = new SlashCommandBuilder()
   .setDescription('役職発言モードの ON / OFF を切り替えます（トグル式）');
 
 /* --------------------------------------------------
- * 2. 発言モード管理（Map<channelId, Map<userId, roleId>>）
+ * 2. 発言モード管理（Map<channelId, Map<userId, modeKey>>）
  * -------------------------------------------------- */
 const activeChannels = new Map();
 
@@ -29,13 +29,13 @@ export function isActive(channelId, userId) {
   return chMap ? chMap.has(userId) : false;
 }
 
-export function getRoleId(channelId, userId) {
+export function getModeKey(channelId, userId) {
   const chMap = activeChannels.get(channelId);
   return chMap ? chMap.get(userId) : null;
 }
 
-export function setActive(channelId, userId, roleId) {
-  ensureChannelMap(channelId).set(userId, roleId);
+export function setActive(channelId, userId, modeKey) {
+  ensureChannelMap(channelId).set(userId, modeKey);
 }
 
 export function setInactive(channelId, userId) {
@@ -48,46 +48,48 @@ export function setInactive(channelId, userId) {
  * -------------------------------------------------- */
 export async function execute(interaction) {
   try {
+    // 1) 忘れずに deferReply
     await interaction.deferReply({ ephemeral: true });
+
+    // 2) 必要な変数を先に取り出し
     const member       = interaction.member;
     const clientConfig = interaction.client.ROLE_CONFIG || {};
     const channelId    = interaction.channelId;
     const userId       = interaction.user.id;
-    console.log('ROLE_CONFIG keys:', Object.keys(clientConfig));
-    console.log('User roles:', member.roles.cache.map(r => r.id));
-    console.log('Matched:', 
-                Object.entries(clientConfig)
-                .filter(([roleId]) => member.roles.cache.map(r => r.id).includes(roleId))
-               );
 
-    // ON→OFF トグル
+    // 3) ON→OFF トグル
     if (isActive(channelId, userId)) {
       setInactive(channelId, userId);
       return interaction.editReply('役職発言モードを **OFF** にしました。');
     }
 
-    // ユーザーの Discord ロールID一覧を取得
+    // 4) ユーザーの Discord ロールID一覧を取得
     const userRoles = member.roles.cache.map(r => r.id);
 
-    // ROLE_CONFIG を走査し、マッチする roleId を探す
-   const matched = Object.entries(clientConfig).flatMap(([modeKey, cfg]) => {
-     const ids = (process.env[cfg.envVar] || '')
-       .split(',')
-       .map(s => s.trim())
-       .filter(Boolean);
-     // このモードに該当するロールIDのうち、ユーザーが持っているもの
-     const hitIds = ids.filter(id => userRoles.includes(id));
-     return hitIds.length > 0
-       ? [{ modeKey, cfg, roleIds: hitIds }]
-       : [];
-   });
+    // 5) 各モード (modeKey) ごとに cfg.envVar から roleIds を取得してマッチング
+    const matched = Object.entries(clientConfig).flatMap(
+      ([modeKey, cfg]) => {
+        // cfg.envVar から roleIds を取得
+        const ids = (process.env[cfg.envVar] || '')
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+        // ユーザーが持っているものを抽出
+        const hitIds = ids.filter(id => userRoles.includes(id));
+        // hitIds が 1 つ以上あれば「このモードにマッチ」とする
+        return hitIds.length > 0
+          ? [{ modeKey, cfg, roleIds: hitIds }]
+          : [];
+      }
+    );
+
     if (matched.length === 0) {
       return interaction.editReply('役職ロールを保有していません。');
     }
 
-    // 複数モード → 選択メニュー
+    // 6) 複数モード → 選択メニュー
     if (matched.length > 1) {
-      const options = matched.map(({ roleId, cfg }) => ({
+      const options = matched.map(({ modeKey, cfg }) => ({
         label: cfg.embedName,
         value: modeKey,
         emoji: cfg.emoji,
@@ -105,12 +107,13 @@ export async function execute(interaction) {
       });
     }
 
-    // 単一モード → ON
+    // 7) 単一モード → ON
     const { modeKey, cfg } = matched[0];
     setActive(channelId, userId, modeKey);
     return interaction.editReply(
       `役職発言モードを **ON** にしました。（${cfg.embedName}）`
     );
+
   } catch (err) {
     console.error('[embedPost] execute error:', err);
     const method = interaction.deferred ? 'followUp' : 'reply';
@@ -126,15 +129,16 @@ export async function execute(interaction) {
  * -------------------------------------------------- */
 export async function handleRolepostSelect(interaction) {
   try {
+    // customId: rolepost-choose-<channelId>-<userId>
     const [, , channelId, userId] = interaction.customId.split('-');
     if (interaction.user.id !== userId) {
       return interaction.reply({ content: 'あなた以外は操作できません。', ephemeral: true });
     }
 
-    const selected = interaction.values[0];
-    setActive(channelId, userId, selected);
+    const selectedModeKey = interaction.values[0];
+    setActive(channelId, userId, selectedModeKey);
 
-    const cfg = interaction.client.ROLE_CONFIG[selected] || {};
+    const cfg = interaction.client.ROLE_CONFIG[selectedModeKey] || {};
     const modeName = cfg.embedName || '不明なモード';
 
     await interaction.update({
@@ -149,13 +153,13 @@ export async function handleRolepostSelect(interaction) {
 /* --------------------------------------------------
  * 5. Embed 生成ヘルパー
  * -------------------------------------------------- */
-export function makeEmbed(content, roleId, roleConfigMap, attachmentURL = null) {
-  const cfg = roleConfigMap[roleId];
+export function makeEmbed(content, modeKey, roleConfigMap, attachmentURL = null) {
+  const cfg = roleConfigMap[modeKey];
   if (!cfg) {
-    console.error(`[makeEmbed] Unknown roleId: ${roleId}`);
+    console.error(`[makeEmbed] Unknown modeKey: ${modeKey}`);
     return new EmbedBuilder()
       .setDescription(content)
-      .setFooter({ text: `ROLE_ID:${roleId} (未定義)` });
+      .setFooter({ text: `MODE_KEY:${modeKey} (未定義)` });
   }
 
   const embed = new EmbedBuilder()

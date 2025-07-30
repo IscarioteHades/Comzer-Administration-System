@@ -393,7 +393,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
 
     if (!hasPermission) {
       return await interaction.editReply({
-        content: `この${mode === 'minister' ? '閣僚会議議員' : mode === 'diplomat' ? '外交官(外務省 総合外務部職員)' : '入国審査担当官'}モードの発言を削除する権限がありません。`,
+        content: `この${mode === 'minister' ? '閣僚会議議員' : mode === 'diplomat' ? '外交官(外務省 総合外務部職員)' : '入国審査担当官'}の発言を削除する権限がありません。`,
       });
     }
 

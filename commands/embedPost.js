@@ -49,10 +49,10 @@ export function setInactive(channelId, userId) {
 export async function execute(interaction) {
   try {
     await interaction.deferReply({ ephemeral: true });
-    const member     = interaction.member;
+    const member       = interaction.member;
     const clientConfig = interaction.client.ROLE_CONFIG;
-    const channelId  = interaction.channelId;
-    const userId     = interaction.user.id;
+    const channelId    = interaction.channelId;
+    const userId       = interaction.user.id;
 
     // ON→OFF トグル
     if (isActive(channelId, userId)) {
@@ -63,17 +63,10 @@ export async function execute(interaction) {
     // 1) ユーザーの Discord ロールID一覧を取得
     const userRoles = member.roles.cache.map(r => r.id);
 
-    // 2) ROLE_CONFIG を走査して、持っている envVar（役職ロール）を探す
+    // 2) ROLE_CONFIG のキー（roleId）と照合
     const matched = Object.entries(clientConfig)
-      .flatMap(([key, cfg]) => {
-        const ids = (process.env[cfg.envVar] || "")
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean);
-        return ids.some(rid => userRoles.includes(rid))
-          ? [{ key, rid: ids[0], cfg }]
-          : [];
-      });
+      .filter(([rid]) => userRoles.includes(rid))
+      .map(([rid, cfg]) => ({ rid, cfg }));
 
     if (matched.length === 0) {
       return interaction.editReply('役職ロールを保有していません。');
@@ -81,10 +74,9 @@ export async function execute(interaction) {
 
     // 複数モード → 選択メニュー
     if (matched.length > 1) {
-      const options = matched.map(({ key, rid, cfg }) => ({
-        label: cfg.label,
+      const options = matched.map(({ rid, cfg }) => ({
+        label: cfg.embedName,
         value: rid,
-        emoji: cfg.emoji,
       }));
 
       const menu = new StringSelectMenuBuilder()
@@ -100,13 +92,11 @@ export async function execute(interaction) {
     }
 
     // 単一モード → そのまま ON
-    if (matched.length === 1) {
-      const { rid, cfg } = matched[0];
-      setActive(channelId, userId, rid);
-      return interaction.editReply(
-        `役職発言モードを **ON** にしました。（${cfg.embedName}）`
-      );
-    }
+    const { rid, cfg } = matched[0];
+    setActive(channelId, userId, rid);
+    return interaction.editReply(
+      `役職発言モードを **ON** にしました。（${cfg.embedName}）`
+    );
 
   } catch (err) {
     console.error('[embedPost] execute error:', err);
@@ -131,8 +121,7 @@ export async function handleRolepostSelect(interaction) {
     const roleId = interaction.values[0];
     setActive(channelId, userId, roleId);
 
-    const entry = Object.values(interaction.client.ROLE_CONFIG)
-      .find(cfg => (process.env[cfg.envVar] || "").split(',').includes(roleId));
+    const entry = interaction.client.ROLE_CONFIG[roleId];
     const modeName = entry?.embedName || '不明なモード';
 
     await interaction.update({

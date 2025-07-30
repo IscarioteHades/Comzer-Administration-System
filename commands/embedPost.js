@@ -65,6 +65,7 @@ export async function execute(interaction) {
     // 環境変数からロールIDリスト
     const diplomatRoles = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
     const ministerRoles = (process.env.ROLLID_MINISTER  || '').split(',').filter(Boolean);
+    const examinerRoles = (process.env.EXAMINER_ROLE_IDS || '').split(',').filter(Boolean);
 
     // ユーザーのロールID一覧
     const userRoles = member.roles.cache.map(r => r.id);
@@ -72,7 +73,8 @@ export async function execute(interaction) {
     // 保持モード判定
     const matched = [
       ...diplomatRoles.filter(rid => userRoles.includes(rid)).map(() => ({ mode: 'diplomat', rid: diplomatRoles[0] })),
-      ...ministerRoles.filter(rid => userRoles.includes(rid)).map(() => ({ mode: 'minister', rid: ministerRoles[0] }))
+      ...ministerRoles.filter(rid => userRoles.includes(rid)).map(() => ({ mode: 'minister', rid: ministerRoles[0] })),
+      ...examinerRoles.filter(rid => userRoles.includes(rid)).map(rid => ({ mode: 'examiner', rid: ministerRoles[0] }))
     ];
 
     if (matched.length === 0) {
@@ -105,7 +107,7 @@ export async function execute(interaction) {
     // 単一モード → そのまま ON
     const { rid } = matched[0];
     setActive(channelId, userId, rid);
-    const modeName = matched[0].mode === 'diplomat' ? '外交官(外務省 総合外務部職員)' : '閣僚会議議員';
+    const modeName = matched[0].mode ===  'diplomat' ? '外交官(外務省 総合外務部職員)' : '閣僚会議議員';
     return interaction.editReply(`役職発言モードを **ON** にしました。（${modeName}）`);
 
   } catch (err) {

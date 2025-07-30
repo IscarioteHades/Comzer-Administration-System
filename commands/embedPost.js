@@ -4,7 +4,6 @@ import {
   StringSelectMenuBuilder,
   EmbedBuilder,
 } from 'discord.js';
-import { ROLE_CONFIG } from '../index.js';
 
 /* --------------------------------------------------
  * 1. /rolepost スラッシュコマンド定義
@@ -49,13 +48,11 @@ export function setInactive(channelId, userId) {
  * -------------------------------------------------- */
 export async function execute(interaction) {
   try {
-    // --- 必ず最初に deferReply ---
     await interaction.deferReply({ ephemeral: true });
-
-    const member       = interaction.member;
-    const clientConfig = interaction.client.ROLE_CONFIG || ROLE_CONFIG;
-    const channelId    = interaction.channelId;
-    const userId       = interaction.user.id;
+    const member     = interaction.member;
+    const clientConfig = interaction.client.ROLE_CONFIG;
+    const channelId  = interaction.channelId;
+    const userId     = interaction.user.id;
 
     // ON→OFF トグル
     if (isActive(channelId, userId)) {
@@ -126,17 +123,14 @@ export async function execute(interaction) {
  * -------------------------------------------------- */
 export async function handleRolepostSelect(interaction) {
   try {
-    // customId: rolepost-choose-<channelId>-<userId>
     const [, , channelId, userId] = interaction.customId.split('-');
     if (interaction.user.id !== userId) {
       return interaction.reply({ content: 'あなた以外は操作できません。', ephemeral: true });
     }
 
-    // value に roleId がそのまま来る
     const roleId = interaction.values[0];
     setActive(channelId, userId, roleId);
 
-    // 選択された roleId から ROLE_CONFIG を逆引き
     const entry = Object.values(interaction.client.ROLE_CONFIG)
       .find(cfg => (process.env[cfg.envVar] || "").split(',').includes(roleId));
     const modeName = entry?.embedName || '不明なモード';
@@ -153,8 +147,8 @@ export async function handleRolepostSelect(interaction) {
 /* --------------------------------------------------
  * 5. Embed 生成ヘルパー
  * -------------------------------------------------- */
-export function makeEmbed(content, roleId, ROLE_CONFIG, attachmentURL = null) {
-  const cfg = ROLE_CONFIG[roleId];
+export function makeEmbed(content, roleId, roleConfigMap, attachmentURL = null) {
+  const cfg = roleConfigMap[roleId];
   if (!cfg) {
     console.error(`[makeEmbed] Unknown roleId: ${roleId}`);
     return new EmbedBuilder()

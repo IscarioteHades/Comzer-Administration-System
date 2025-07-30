@@ -327,6 +327,11 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);
+  const examinerRoles = (process.env.EXAMINER_ROLE_IDS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
 
   // 実行者が持っているロール一覧
   const executorRoleIds = member.roles.cache.map(r => r.id);
@@ -366,6 +371,8 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
       mode = 'minister';
     } else if (diplomatRoles.includes(roleIdOfEmbed)) {
       mode = 'diplomat';
+    } else if (examinerRoles.includes(roleIdOfEmbed)) {
+      mode = 'examiner';
     }
 
     if (!mode) {
@@ -376,13 +383,17 @@ if (interaction.isChatInputCommand() && interaction.commandName === 'delete_role
 
     const hasPermission = (
       mode === 'minister'
-        ? ministerRoles.some(r => executorRoleIds.includes(r))
-        : diplomatRoles.some(r => executorRoleIds.includes(r))
+      ? ministerRoles.some(r => executorRoleIds.includes(r))
+      : mode === 'diplomat'
+      ? diplomatRoles.some(r => executorRoleIds.includes(r))
+      : mode === 'examiner'
+      ? examinerRoles.some(r => executorRoleIds.includes(r))
+      : false
     );
 
     if (!hasPermission) {
       return await interaction.editReply({
-        content: `この${mode === 'minister' ? '閣僚' : '外交'}モードの発言を削除する権限がありません。`,
+        content: `この${mode === 'minister' ? '閣僚会議議員' : mode === 'diplomat' ? '外交官(外務省 総合外務部職員)' : '入国審査担当官'}モードの発言を削除する権限がありません。`,
       });
     }
 

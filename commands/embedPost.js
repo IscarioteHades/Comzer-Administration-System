@@ -70,10 +70,17 @@ export async function execute(interaction) {
     const userRoles = member.roles.cache.map(r => r.id);
 
     // ROLE_CONFIG を走査し、マッチする roleId を探す
-    const matched = Object.entries(clientConfig)
-      .filter(([roleId]) => userRoles.includes(roleId))
-      .map(([roleId, cfg]) => ({ roleId, cfg }));
-
+   const matched = Object.entries(clientConfig).flatMap(([modeKey, cfg]) => {
+     const ids = (process.env[cfg.envVar] || '')
+       .split(',')
+       .map(s => s.trim())
+       .filter(Boolean);
+     // このモードに該当するロールIDのうち、ユーザーが持っているもの
+     const hitIds = ids.filter(id => userRoles.includes(id));
+     return hitIds.length > 0
+       ? [{ modeKey, cfg, roleIds: hitIds }]
+       : [];
+   });
     if (matched.length === 0) {
       return interaction.editReply('役職ロールを保有していません。');
     }
@@ -82,7 +89,7 @@ export async function execute(interaction) {
     if (matched.length > 1) {
       const options = matched.map(({ roleId, cfg }) => ({
         label: cfg.embedName,
-        value: roleId,
+        value: modeKey,
         emoji: cfg.emoji,
       }));
 
@@ -99,8 +106,8 @@ export async function execute(interaction) {
     }
 
     // 単一モード → ON
-    const { roleId, cfg } = matched[0];
-    setActive(channelId, userId, roleId);
+    const { modeKey, cfg } = matched[0];
+    setActive(channelId, userId, modeKey);
     return interaction.editReply(
       `役職発言モードを **ON** にしました。（${cfg.embedName}）`
     );

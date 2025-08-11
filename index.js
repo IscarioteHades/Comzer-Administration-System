@@ -853,7 +853,7 @@ if (interaction.isChatInputCommand()) {
                 `同行者: ${companionStr}\n` +
                 `合流者: ${joinerStr}\n`;
             } else {
-              details = `\n ${inputText}`;
+              details = `${inputText}`;
             }
             const reasonMsg =
               typeof result.content === "string"

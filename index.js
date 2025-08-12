@@ -11,6 +11,7 @@ import * as statusCommand from './commands/status.js';
 import { data as shutdownData, execute as shutdownExec } from './commands/shutdown.js';
 import fs from "node:fs";
 import mysql from 'mysql2/promise';
+import { syncMember, fullSync } from './citizen_data/syncMembers.js';
 import {
   handleCommands,
   initBlacklist,
@@ -205,12 +206,20 @@ bot.commands = new Collection([
 ]);
 // ── Botがログインして準備完了したら一度だけblacklistCommands.js側を初期化
 bot.once("ready", async () => {
-  console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);
-  await initBlacklist();
-  console.log("✅ Bot ready & blacklist initialized");
-  const health = await verifyDbHealthOnce();
-  console.log("→ verifyDbHealthOnce() の戻り値:", health);
-});
+    console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);
+    await initBlacklist();
+    console.log("✅ Bot ready & blacklist initialized");
+    const health = await verifyDbHealthOnce();
+    console.log("→ verifyDbHealthOnce() の戻り値:", health);
+// 国民台帳同期システム1
+    try {
+        await fullSync(bot); // 初回フル同期
+      } catch (e) {
+        console.error('[CASBOT] fullSync error:', e);
+      }
+      const interval = Number(process.env.CZR_SYNC_INTERVAL_MS || 3*60*60*1000);
+      setInterval(() => fullSync(bot).catch(e=>console.error('[CASBOT] fullSync error:', e)), interval);
+    });
 
 // ── セッション管理
 const sessions = new Map();
@@ -936,6 +945,14 @@ if (interaction.isChatInputCommand()) {
           }
         }
       });
+// 国民台帳同期システム2
+bot.on('guildMemberAdd', (m) => {
+  syncMember(m).catch(e => console.error('[guildMemberAdd]', e.message));
+});
+
+bot.on('guildMemberUpdate', (oldM, newM) => {
+  syncMember(newM).catch(e => console.error('[guildMemberUpdate]', e.message));
+});
 
 // ── メッセージ処理ハンドラ
 bot.on('messageCreate', async m => {

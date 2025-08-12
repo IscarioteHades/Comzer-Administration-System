@@ -1,16 +1,16 @@
 import { upsertMember } from './czrApi.js';
-import { CONFIG } from '../config.js';
-import { sleep } from '../lib/sleep.js';
+
+const GUILD_ID      = process.env.CZR_GUILD_ID || '1188411576483590194';
+const ROLE_DIPLOMAT = process.env.ROLE_DIPLOMAT_ID || '1188429176739479562';
 
 export function inferGroupFromRoles(roleIds) {
-  // 外交官ロール → diplomat、それ以外は citizen（admin はユニークアカウント想定）
-  return roleIds.includes(CONFIG.ROLE_DIPLOMAT) ? 'diplomat' : 'citizen';
+  return roleIds.includes(ROLE_DIPLOMAT) ? 'diplomat' : 'citizen';
 }
 
 export async function syncMember(member) {
   const roles = [...member.roles.cache.keys()];
   const payload = {
-    guild_id: CONFIG.GUILD_ID,
+    guild_id: GUILD_ID,
     discord_id: member.id,
     group: inferGroupFromRoles(roles),
     roles,
@@ -18,14 +18,14 @@ export async function syncMember(member) {
   return upsertMember(payload);
 }
 
-export async function fullSync(client) {
-  const g = await client.guilds.fetch(CONFIG.GUILD_ID);
+export async function fullSync(client, throttleMs = Number(process.env.CZR_THROTTLE_MS || 250)) {
+  const g = await client.guilds.fetch(GUILD_ID);
   const guild = await g.fetch();
-  // すべてのメンバーを取得（Privileged Intent "Server Members" が必要）
-  const members = await guild.members.fetch(); // Collection
+  // 全メンバー取得（Server Members Intent が必須）
+  const members = await guild.members.fetch(); // Collection GuildMember
   for (const m of members.values()) {
     try { await syncMember(m); }
     catch (e) { console.error('[fullSync] member', m.id, e.message); }
-    await sleep(CONFIG.THROTTLE_MS);
+    await new Promise(r => setTimeout(r, throttleMs));
   }
 }

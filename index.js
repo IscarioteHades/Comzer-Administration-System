@@ -36,7 +36,10 @@ import {
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 
-const HEALTHZ_URL = "https://comzer-gov.net/wp-json/czr/v1/healthz";
+ const HEALTHZ_URL = process.env.HEALTHZ_URL
+   || (process.env.CZR_BASE
+       ? `${process.env.CZR_BASE}/wp-json/czr-bridge/v1/healthz`
+       : 'https://comzer-gov.net/wp-json/czr-bridge/v1/healthz');
 const API_URL   = process.env.API_URL
 const API_TOKEN = process.env.YOUR_SECRET_API_KEY;
 

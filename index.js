@@ -218,12 +218,11 @@ bot.once("ready", async () => {
     try {
         await fullSync(bot); // 初回フル同期
       } catch (e) {
-        console.error('[CASBOT] fullSync error:', e);
-      }
-      const interval = Number(process.env.CZR_SYNC_INTERVAL_MS || 3*60*60*1000);
-      setInterval(() => fullSync(bot).catch(e=>console.error('[CASBOT] fullSync error:', e)), interval);
-    });
-
+        client.once('ready', () => {
+  console.log(`[CASBOT] Ready as ${client.user.tag}`);
+  fullSync(client).catch(console.error);
+  setInterval(() => fullSync(client).catch(console.error), 3 * 60 * 60 * 1000);
+});
 // ── セッション管理
 const sessions = new Map();
 function startSession(channelId, userId) {

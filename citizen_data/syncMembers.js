@@ -1,41 +1,37 @@
 import { upsertMember } from './czrApi.js';
 
-const GUILD_ID      = process.env.CZR_GUILD_ID || '1188411576483590194';
-const ROLE_DIPLOMAT = process.env.ROLE_DIPLOMAT_ID || '1188429176739479562';
-const THROTTLE_MS   = Number(process.env.CZR_THROTTLE_MS || 700); // 既定700msに緩める
-
-const STOP_USER_IDS = (process.env.STOP_USER_IDS || '')
-  .split(',').map(s => s.trim()).filter(Boolean);
+const GUILD_ID      = '1188411576483590194';
+const ROLE_DIPLOMAT = '1188429176739479562';
 
 export function inferGroupFromRoles(roleIds) {
-  return roleIds.includes(ROLE_DIPLOMAT) ? 'diplomat' : 'citizen';
+  if (roleIds.includes(ROLE_DIPLOMAT)) return 'diplomat';
+  return 'citizen';
 }
 
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-
-export async function syncMember(member) {
-  if (STOP_USER_IDS.includes(member.id)) return { skip: true, member: member.id };
-  const roles = [...member.roles.cache.keys()];
+export async function syncMember(m) {
+  const roles = [...m.roles.cache.keys()];
   const payload = {
     guild_id: GUILD_ID,
-    discord_id: member.id,
+    discord_id: m.id,
     group: inferGroupFromRoles(roles),
     roles,
   };
-  return upsertMember(payload);
+  const res = await upsertMember(payload);
+  console.log('[syncMember]', m.id, res.status);
+  return res;
 }
 
-export async function fullSync(client) {
+export async function fullSync(client, throttleMs = 1000) { // ← 1000ms へ
   const g = await client.guilds.fetch(GUILD_ID);
   const guild = await g.fetch();
-  const members = await guild.members.fetch(); // 全件
+  const members = await guild.members.list({ limit: 1000 });
   for (const m of members.values()) {
     try {
       await syncMember(m);
     } catch (e) {
-      console.error('[fullSync] member', m.id, e.message);
+      console.error('[fullSync] member', m.id, 'failed:', e.message);
     }
-    const jitter = Math.floor(Math.random() * 200);
-    await sleep(THROTTLE_MS + jitter);
+    const jitter = Math.floor(Math.random() * 250);
+    await new Promise(r => setTimeout(r, throttleMs + jitter));
   }
 }

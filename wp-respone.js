@@ -1,11 +1,11 @@
-// server.js (改良版)
+// wp-respone.js (改良版)
 const express = require('express');
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const { Client, GatewayIntentBits } = require('discord.js');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const CZR_SECRET = process.env.CZR_SECRET; // WP と共有するシークレット（必須）
+const CZR_SECRET = process.env.CASBOT_API_SECRET; // WP と共有するシークレット（必須）
 const PORT = process.env.PORT || 4040;
 
 if (!BOT_TOKEN) {
@@ -105,8 +105,8 @@ app.post('/api/notify-dm', verifySignature, async (req, res) => {
       return res.status(404).json({ ok: false, error: 'discord user not found' });
     }
 
-    const title = (status === 'approved') ? '申請が承認されました' : '申請が却下されました';
-    const content = `あなたの申請 (ID: ${request_id}) は **${status}** になりました。\n理由: ${reason || '特になし'}`;
+    const title = (status === 'approved') ? '承認されました' : '却下されました';
+    const content = `あなたの申請 (ID: ${request_id}) は **${status}** 。\n理由: ${reason || 'なし'}`;
 
     try {
       await user.send(`${title}\n\n${content}`);

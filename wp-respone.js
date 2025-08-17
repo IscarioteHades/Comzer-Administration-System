@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const { Client, GatewayIntentBits } = require('discord.js');
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
+const BOT_TOKEN = process.env.DISCORD_TOKEN;
 const CZR_SECRET = process.env.CASBOT_API_SECRET; // WP と共有するシークレット（必須）
 const PORT = process.env.PORT || 4040;
 

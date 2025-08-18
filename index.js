@@ -12,12 +12,7 @@ import { data as shutdownData, execute as shutdownExec } from './commands/shutdo
 import fs from "node:fs";
 import mysql from 'mysql2/promise';
 import { syncMember, fullSync } from './citizen_data/syncMembers.js';
-import {
-  handleCommands,
-  initBlacklist,
-  isBlacklistedCountry,
-  isBlacklistedPlayer,
-} from "./blacklistCommands.js";
+import { registerCommands, handleCommands, initBlacklist, isBlacklistedCountry, isBlacklistedPlayer } from "./blacklistCommands.js";
 import {
   WebhookClient,
   Client,

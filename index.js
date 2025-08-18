@@ -12,7 +12,7 @@ import { data as shutdownData, execute as shutdownExec } from './commands/shutdo
 import fs from "node:fs";
 import mysql from 'mysql2/promise';
 import { syncMember, fullSync } from './citizen_data/syncMembers.js';
-import { registerCommands, handleCommands, initBlacklist, isBlacklistedCountry, isBlacklistedPlayer } from "./blacklistCommands.js";
+import { handleCommands, initBlacklist, isBlacklistedCountry, isBlacklistedPlayer } from "./blacklistCommands.js";
 import {
   WebhookClient,
   Client,
@@ -206,7 +206,6 @@ bot.commands = new Collection([
 bot.once("ready", async () => {
   console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);
   await initBlacklist();
-  await registerCommands(bot); // スラコマ再登録
   console.log("✅ Bot ready & blacklist initialized");
 
   try {

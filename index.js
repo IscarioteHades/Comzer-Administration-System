@@ -209,19 +209,23 @@ bot.commands = new Collection([
 ]);
 // ── Botがログインして準備完了したら一度だけblacklistCommands.js側を初期化
 bot.once("ready", async () => {
-    console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);
-    await initBlacklist();
-    console.log("✅ Bot ready & blacklist initialized");
-    const health = await verifyDbHealthOnce();
-    console.log("→ verifyDbHealthOnce() の戻り値:", health);
-// 国民台帳同期システム1
-    try {
-        await fullSync(bot); // 初回フル同期
-      } catch (e) {
-        client.once('ready', () => {
-  console.log(`[CASBOT] Ready as ${client.user.tag}`);
-  fullSync(client).catch(console.error);
-  setInterval(() => fullSync(client).catch(console.error), 3 * 60 * 60 * 1000);
+  console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);
+  await initBlacklist();
+  await registerCommands(bot); // スラコマ再登録
+  console.log("✅ Bot ready & blacklist initialized");
+
+  try {
+    // 初回フル同期（スロットルは環境変数・既定 700ms）
+    await fullSync(bot, Number(process.env.CZR_THROTTLE_MS || 700));
+  } catch (e) {
+    console.error('[fullSync] 初回同期失敗:', e);
+  }
+
+  // 定期同期（既定 3h）
+  const interval = Number(process.env.CZR_SYNC_INTERVAL_MS || 10800000);
+  setInterval(() => {
+    fullSync(bot).catch(err => console.error('[fullSync] 定期同期失敗:', err));
+  }, interval);
 });
 // ── セッション管理
 const sessions = new Map();

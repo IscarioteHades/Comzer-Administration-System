@@ -38,13 +38,6 @@ import { GoogleSpreadsheet } from "google-spreadsheet";
 const API_URL   = 'https://comzer-gov.net/wp-json/czr/v1/data-access'
 const API_TOKEN = process.env.YOUR_SECRET_API_KEY;
 
-// ── HTTP keep-alive サーバー（Render用）
-const port = process.env.PORT || 3000;
-http.createServer((_, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('OK');
-}).listen(port, () => console.log(`Server listening on ${port}`));
-
 // MySQL関連
 let healthPromise;
 

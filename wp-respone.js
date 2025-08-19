@@ -1,20 +1,21 @@
-// notify-server.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Client, GatewayIntentBits } = require('discord.js');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000; // fallbackはローカル用だけ
 app.use(bodyParser.json());
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages], partials: ['CHANNEL'] });
+const client = new Client({
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
+    partials: ['CHANNEL']
+});
 client.login(process.env.DISCORD_TOKEN);
 
 // 通知キュー
 const queue = [];
 let processing = false;
 
-// キュー処理関数
 async function processQueue() {
     if (processing || queue.length === 0) return;
     processing = true;
@@ -27,7 +28,6 @@ async function processQueue() {
         } catch (err) {
             console.error('DM送信エラー:', err);
         }
-        // レート制限対策で少し待つ
         await new Promise(res => setTimeout(res, 1500)); // 1.5秒間隔
     }
 
@@ -37,7 +37,7 @@ async function processQueue() {
 // APIエンドポイント
 app.post('/api/notify', (req, res) => {
     const data = req.body;
-    console.log('通知受信:', data); // ←追加
+    console.log('通知受信:', data);
     const message = `
 申請ID: ${data.request_id}
 種類: ${data.request_name}
@@ -52,4 +52,5 @@ app.post('/api/notify', (req, res) => {
     res.json({ status: 'queued' });
 });
 
+// listen はここで一回だけ！
 app.listen(PORT, () => console.log(`Notify server listening on port ${PORT}`));

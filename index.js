@@ -35,7 +35,7 @@ import { GoogleSpreadsheet } from "google-spreadsheet";
    || (process.env.CZR_BASE
        ? `${process.env.CZR_BASE}/wp-json/czr-bridge/v1/healthz`
        : 'https://comzer-gov.net/wp-json/czr-bridge/v1/healthz');
-const API_URL   = process.env.API_URL
+const API_URL   = 'https://comzer-gov.net/wp-json/czr/v1/data-access'
 const API_TOKEN = process.env.YOUR_SECRET_API_KEY;
 
 // ── HTTP keep-alive サーバー（Render用）

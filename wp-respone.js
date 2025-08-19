@@ -37,6 +37,7 @@ async function processQueue() {
 // APIエンドポイント
 app.post('/api/notify', (req, res) => {
     const data = req.body;
+    console.log('通知受信:', data); // ←追加
     const message = `
 申請ID: ${data.request_id}
 種類: ${data.request_name}

@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const { client } = require('./bot'); // bot.js で client を export している想定
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 app.use(bodyParser.json());
 

@@ -1,22 +1,15 @@
+// server.js
 const express = require('express');
 const bodyParser = require('body-parser');
-const { Client, GatewayIntentBits } = require('discord.js');
+
+// 既存 Bot クライアントを import
+const { client } = require('./bot'); // bot.js で client を export している想定
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Discord Bot トークン
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
-
-// Discord クライアント
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages], partials: ['CHANNEL'] });
-
-client.login(DISCORD_TOKEN);
-
-// JSON ボディを受け取る
 app.use(bodyParser.json());
 
-// 通知受信エンドポイント
 app.post('/api/notify', async (req, res) => {
     const data = req.body;
     console.log('通知受信:', data);
@@ -44,7 +37,6 @@ app.post('/api/notify', async (req, res) => {
     }
 });
 
-// サーバー起動
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Notification server running on port ${PORT}`);
 });

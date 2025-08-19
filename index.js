@@ -30,13 +30,11 @@ import {
 } from "discord.js";
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
+import express from 'express';
+import bodyParser from 'body-parser';
 
 
 // index.js
-
-const express = require('express');
-const bodyParser = require('body-parser');
-const { Client, GatewayIntentBits } = require('discord.js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;

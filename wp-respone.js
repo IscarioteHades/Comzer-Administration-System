@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const { Client, GatewayIntentBits } = require('discord.js');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
 // Discord client 初期化

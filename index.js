@@ -31,6 +31,71 @@ import {
 import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 
+
+// index.js
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const { Client, GatewayIntentBits } = require('discord.js');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+app.use(bodyParser.json());
+
+// Discord client 初期化
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
+  partials: ['CHANNEL']
+});
+client.login(process.env.DISCORD_TOKEN);
+
+// ── 通知キュー関連 ──
+const queue = [];
+let processing = false;
+
+async function processQueue() {
+  if (processing || queue.length === 0) return;
+  processing = true;
+
+  while (queue.length > 0) {
+    const item = queue.shift();
+    try {
+      const user = await client.users.fetch(item.discord_id);
+      if (user) await user.send(item.message);
+    } catch (err) {
+      console.error('DM送信エラー:', err);
+    }
+    // レート制限対策
+    await new Promise(res => setTimeout(res, 1500));
+  }
+
+  processing = false;
+}
+
+// ── APIエンドポイント ──
+app.get('/', (_, res) => res.send('OK')); // health check
+
+app.post('/api/notify', (req, res) => {
+  const data = req.body;
+  console.log('通知受信:', data);
+
+  const message = `
+申請ID: ${data.request_id}
+種類: ${data.request_name}
+内容: ${data.request_content}
+作成日時: ${data.created_at}
+部署: ${data.department}
+決定: ${data.decision_event} (${data.decision_datetime})
+備考: ${data.notice}
+`;
+  queue.push({ discord_id: data.discord_id, message });
+  processQueue();
+  res.json({ status: 'queued' });
+});
+
+// ── Listen ──
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+
  const HEALTHZ_URL = process.env.HEALTHZ_URL
    || (process.env.CZR_BASE
        ? `${process.env.CZR_BASE}/wp-json/czr-bridge/v1/healthz`

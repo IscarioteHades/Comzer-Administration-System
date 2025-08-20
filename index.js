@@ -98,7 +98,6 @@ app.post('/api/notify', (req, res) => {
 
   const rawRequestName = String(data.request_name ?? data.requestName ?? '').trim();
   const translatedType = typeMap[rawRequestName] || rawRequestName || '—';
-
   const requestId = data.request_id ?? data.requestId ?? '—';
   const createdAt = data.created_at ?? data.createdAt ?? '—';
   const department = data.department ?? data.dept ?? '—';

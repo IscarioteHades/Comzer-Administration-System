@@ -36,63 +36,79 @@ import bodyParser from 'body-parser';
 
 // index.js
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-app.use(bodyParser.json());
-
-// Discord client 初期化
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
-  partials: ['CHANNEL']
-});
-client.login(process.env.DISCORD_TOKEN);
-
-// ── 通知キュー関連 ──
-const queue = [];
-let processing = false;
-
-async function processQueue() {
-  if (processing || queue.length === 0) return;
-  processing = true;
-
-  while (queue.length > 0) {
-    const item = queue.shift();
-    try {
-      const user = await client.users.fetch(item.discord_id);
-      if (user) await user.send(item.message);
-    } catch (err) {
-      console.error('DM送信エラー:', err);
-    }
-    // レート制限対策
-    await new Promise(res => setTimeout(res, 1500));
+app.post('/api/notify', (req, res) => {
+  const data = req.body || {};
+  // ログは長すぎないように一部だけ出す
+  try {
+    console.log('通知受信:', JSON.stringify(data).slice(0, 1000));
+  } catch (e) {
+    console.log('通知受信: (non-serializable data)');
   }
 
-  processing = false;
-}
+  // discord_id の取得（色々なプロパティ名に対応）
+  const discordIdRaw = data.discord_id ?? data.discordId ?? data.discord ?? '';
+  const discordId = String(discordIdRaw).trim();
+  if (!discordId) {
+    console.error('notify: missing discord_id', data);
+    return res.status(400).json({ error: 'discord_id missing' });
+  }
 
-// ── APIエンドポイント ──
-app.get('/', (_, res) => res.send('OK')); // health check
+  // 申請種類マッピング
+  const typeMap = {
+    business_filing: '開業・廃業届',
+    political_org_create: '政治団体設立申請',
+    donation_report: '寄付申告',
+    party_membership: '入党・離党届',
+    party_create_dissolve: '結党・解党届',
+    citizen_recommend: '新規国民推薦届',
+    staff_appointment: '職員登用申請',
+    registry_update: '国民登記情報修正申請'
+  };
 
-app.post('/api/notify', (req, res) => {
-  const data = req.body;
-  console.log('通知受信:', data);
+  // フィールドの安全な取り出し（複数のキー名に対応）
+  const rawRequestName = String(data.request_name ?? data.requestName ?? '').trim();
+  const translatedType = typeMap[rawRequestName] || rawRequestName || '—';
 
-  const message = `
-申請ID: ${data.request_id}
-種類: ${data.request_name}
-内容: ${data.request_content}
-作成日時: ${data.created_at}
-部署: ${data.department}
-決定: ${data.decision_event} (${data.decision_datetime})
-備考: ${data.notice}
-`;
-  queue.push({ discord_id: data.discord_id, message });
+  const requestId = data.request_id ?? data.requestId ?? '—';
+  const createdAt = data.created_at ?? data.createdAt ?? '—';
+  const department = data.department ?? data.dept ?? '—';
+  const decisionEvent = data.decision_event ?? data.decisionEvent ?? '—';
+  const decisionDatetime = data.decision_datetime ?? data.decisionDatetime ?? data.decision_event_datetime ?? '—';
+  const notice = (data.notice ?? data.memo ?? '').toString().trim() || 'なし';
+
+  // ペイロード（申請内容）は改行文字を含む可能性があるので文字列化して扱う
+  const payloadContent = (data.request_content ?? data.requestContent ?? data.payload ?? '').toString().trim() || 'なし';
+
+  // 組み立て（指定フォーマット）
+  const message = [
+    '【重要】',
+    '件名 : 審査結果通知のお知らせ',
+    '申請先機関から通知結果が届いています。',
+    '',
+    '======================================',
+    `さきに申請のあった[種類: ${translatedType}]（到達番号：${requestId}、作成日時：${createdAt}）について、以下のとおり[決定: ${decisionEvent}]しました。`,
+    '',
+    '《申請内容》',
+    `申請内容：${translatedType}`,
+    `申請到達日時：${createdAt}`,
+    `申請内容：${payloadContent}`,
+    '',
+    '《決裁情報》',
+    `決裁部門：${department}`,
+    `決裁日時：${decisionDatetime}`,
+    '担当者：（非開示）',
+    `備考：${notice}`,
+    '',
+    '📢 このメッセージは、仮想国家コミュニティ《コムザール連邦共和国》が管理運営するコムザール行政システムによる自動通知です。'
+  ].join('\n');
+
+  // キューに積む（discord_id を文字列に）
+  queue.push({ discord_id: String(discordId), message });
+  console.log(`notify: queued message for ${discordId} (request ${requestId})`);
   processQueue();
-  res.json({ status: 'queued' });
-});
 
-// ── Listen ──
-app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+  return res.json({ status: 'queued' });
+});
 
  const HEALTHZ_URL = process.env.HEALTHZ_URL
    || (process.env.CZR_BASE

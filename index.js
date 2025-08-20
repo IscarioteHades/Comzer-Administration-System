@@ -37,6 +37,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
+const validateApiKey = (req) => {
+  const apiKey = req.headers['x-api-key'];
+  return apiKey === process.env.CASBOT_API_SECRET;
+};
+
 // Discord client 初期化
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
@@ -71,6 +76,10 @@ async function processQueue() {
 
 // ── /api/notify ハンドラ（Bot側テンプレ化）────────
 app.post('/api/notify', (req, res) => {
+  // APIキーの検証
+  if (!validateApiKey(req)) {
+    return res.status(403).json({ error: 'Forbidden: Invalid API Key' });
+  }
   const data = req.body || {};
   try {
     console.log('通知受信:', JSON.stringify(data).slice(0, 1000));

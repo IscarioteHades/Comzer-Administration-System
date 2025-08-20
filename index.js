@@ -106,7 +106,7 @@ app.post('/api/notify', (req, res) => {
   const decisionDatetime = data.decision_datetime ?? data.decisionDatetime ?? data.decision_event_datetime ?? '—';
   const notice = (data.notice ?? data.memo ?? '').toString().trim() || 'なし';
   const payloadContent = (data.request_content ?? data.requestContent ?? data.payload ?? '').toString().trim() || 'なし';
-
+  const footer = '📢 このメッセージは、仮想国家コミュニティ《コムザール連邦共和国》が管理運営するコムザール行政システムによる自動通知です。';
   const message = [
     '【重要】',
     '件名 : 審査結果通知のお知らせ',
@@ -126,7 +126,7 @@ app.post('/api/notify', (req, res) => {
     '担当者：（非開示）',
     `備考：${notice}`,
     '',
-    '📢 このメッセージは、仮想国家コミュニティ《コムザール連邦共和国》が管理運営するコムザール行政システムによる自動通知です。'
+    footer.toLowerCase(),
   ].join('\n');
 
   queue.push({ discord_id: String(discordId), message });

@@ -33,19 +33,51 @@ import { GoogleSpreadsheet } from "google-spreadsheet";
 import express from 'express';
 import bodyParser from 'body-parser';
 
+const app = express();
+const PORT = process.env.PORT || 3000;
+app.use(bodyParser.json());
 
-// index.js
+// Discord client 初期化
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
+  partials: ['CHANNEL']
+});
+client.login(process.env.DISCORD_TOKEN);
 
+// ── 通知キュー関連 ──
+const queue = [];
+let processing = false;
+
+async function processQueue() {
+  if (processing || queue.length === 0) return;
+  processing = true;
+
+  while (queue.length > 0) {
+    const item = queue.shift();
+    try {
+      const user = await client.users.fetch(item.discord_id);
+      if (user) {
+        // item.message はプレーン文字列またはオブジェクト（embeds 等）を想定
+        await user.send(item.message);
+      }
+    } catch (err) {
+      console.error('DM送信エラー:', err);
+    }
+    await new Promise(res => setTimeout(res, 1500)); // 1.5s throttle
+  }
+
+  processing = false;
+}
+
+// ── /api/notify ハンドラ（Bot側テンプレ化）────────
 app.post('/api/notify', (req, res) => {
   const data = req.body || {};
-  // ログは長すぎないように一部だけ出す
   try {
     console.log('通知受信:', JSON.stringify(data).slice(0, 1000));
   } catch (e) {
-    console.log('通知受信: (non-serializable data)');
+    console.log('通知受信: (non-serializable)');
   }
 
-  // discord_id の取得（色々なプロパティ名に対応）
   const discordIdRaw = data.discord_id ?? data.discordId ?? data.discord ?? '';
   const discordId = String(discordIdRaw).trim();
   if (!discordId) {
@@ -53,7 +85,6 @@ app.post('/api/notify', (req, res) => {
     return res.status(400).json({ error: 'discord_id missing' });
   }
 
-  // 申請種類マッピング
   const typeMap = {
     business_filing: '開業・廃業届',
     political_org_create: '政治団体設立申請',
@@ -65,7 +96,6 @@ app.post('/api/notify', (req, res) => {
     registry_update: '国民登記情報修正申請'
   };
 
-  // フィールドの安全な取り出し（複数のキー名に対応）
   const rawRequestName = String(data.request_name ?? data.requestName ?? '').trim();
   const translatedType = typeMap[rawRequestName] || rawRequestName || '—';
 
@@ -75,11 +105,8 @@ app.post('/api/notify', (req, res) => {
   const decisionEvent = data.decision_event ?? data.decisionEvent ?? '—';
   const decisionDatetime = data.decision_datetime ?? data.decisionDatetime ?? data.decision_event_datetime ?? '—';
   const notice = (data.notice ?? data.memo ?? '').toString().trim() || 'なし';
-
-  // ペイロード（申請内容）は改行文字を含む可能性があるので文字列化して扱う
   const payloadContent = (data.request_content ?? data.requestContent ?? data.payload ?? '').toString().trim() || 'なし';
 
-  // 組み立て（指定フォーマット）
   const message = [
     '【重要】',
     '件名 : 審査結果通知のお知らせ',
@@ -102,14 +129,17 @@ app.post('/api/notify', (req, res) => {
     '📢 このメッセージは、仮想国家コミュニティ《コムザール連邦共和国》が管理運営するコムザール行政システムによる自動通知です。'
   ].join('\n');
 
-  // キューに積む（discord_id を文字列に）
   queue.push({ discord_id: String(discordId), message });
   console.log(`notify: queued message for ${discordId} (request ${requestId})`);
   processQueue();
 
   return res.json({ status: 'queued' });
 });
+// ヘルスチェック
+app.get('/', (_, res) => res.send('OK'));
 
+// ── Listen（必ずファイル内で1回だけ）────────
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
  const HEALTHZ_URL = process.env.HEALTHZ_URL
    || (process.env.CZR_BASE
        ? `${process.env.CZR_BASE}/wp-json/czr-bridge/v1/healthz`
@@ -119,7 +149,6 @@ const API_TOKEN = process.env.YOUR_SECRET_API_KEY;
 
 // MySQL関連
 let healthPromise;
-
 async function verifyDbHealthOnce() {
   if (healthPromise) return healthPromise;
 

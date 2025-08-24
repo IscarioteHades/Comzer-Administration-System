@@ -1108,6 +1108,8 @@ bot.on('messageCreate', async m => {
   console.log('parentId:', m.channel.parentId, '（型：', typeof m.channel.parentId, '）');
   console.log('TICKET_CAT:', TICKET_CAT, '（型：', typeof TICKET_CAT, '）');
   console.log('mentions.has(bot.user):', m.mentions.has(bot.user));
+  console.log('authorId:', m.author?.id);
+  console.log('channelId:', m.channel?.id, 'channelName:', m.channel?.name);
   console.log('content:', m.content);
 
   if (m.content.trim() === ADMIN_KEYWORD) {

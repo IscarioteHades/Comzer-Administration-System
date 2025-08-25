@@ -47,7 +47,6 @@ const excludeKeywords = [
   'content:',
   'authorId:',
   'channelId:',
-  
 ];
 
 // ログをフィルタして Discord に送る共通処理

@@ -1,5 +1,4 @@
 // logger.js
-
 //  標準モジュール読み込み
 import https from 'https';
 import { URL } from 'url';

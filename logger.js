@@ -45,6 +45,9 @@ const excludeKeywords = [
   'TICKET_CAT:',
   'mentions.has(',
   'content:',
+  'authorId:',
+  'channelId:',
+  
 ];
 
 // ログをフィルタして Discord に送る共通処理

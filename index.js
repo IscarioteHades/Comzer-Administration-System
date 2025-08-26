@@ -143,7 +143,14 @@ app.post('/api/notify', (req, res) => {
   return res.json({ status: 'queued' });
 });
 // ヘルスチェック
-app.get('/', (_, res) => res.send('OK'));
+app.get('/', (req, res) => {
+  const ua = req.headers['user-agent'] || 'unknown';
+  const ip =
+    req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+    req.socket.remoteAddress;
+  console.log(`[HEALTHZ] ping from ${ip}, UA=${ua}`);
+  res.send('OK');
+});
 
 // ── Listen（必ずファイル内で1回だけ）────────
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));

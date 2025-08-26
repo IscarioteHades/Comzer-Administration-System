@@ -2,7 +2,6 @@
 //  標準モジュール読み込み
 import https from 'https';
 import { URL } from 'url';
-
 const { DISCORD_WEBHOOK_URL } = process.env;
 
 // Discord Webhook に送信する関数

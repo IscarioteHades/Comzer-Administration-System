@@ -144,11 +144,7 @@ app.post('/api/notify', (req, res) => {
 });
 // ヘルスチェック
 app.get('/', (req, res) => {
-  const ua = req.headers['user-agent'] || 'unknown';
-  const ip =
-    req.headers['x-forwarded-for']?.split(',')[0].trim() ||
-    req.socket.remoteAddress;
-  console.log(`[HEALTHZ] ping from ${ip}, UA=${ua}`);
+  console.log('[HEALTHZ] ping received');
   res.send('OK');
 });
 

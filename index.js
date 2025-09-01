@@ -32,6 +32,7 @@ import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import express from 'express';
 import bodyParser from 'body-parser';
+import { sendToLoki } from "./logtransfer.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -147,6 +148,8 @@ app.get('/', (req, res) => {
   console.log('[HEALTHZ] ping received');
   res.send('OK');
 });
+
+sendToLoki({ msg: "testmsg" });
 
 // ── Listen（必ずファイル内で1回だけ）────────
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
@@ -313,7 +316,6 @@ bot.commands = new Collection([
   [statusCommand.data.name, statusCommand],
   [shutdownData.name,       { data: shutdownData, execute: shutdownExec }],
 ]);
-require('./logtransfer.js').start();
 // ── Botがログインして準備完了したら一度だけblacklistCommands.js側を初期化
 bot.once("ready", async () => {
   console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);

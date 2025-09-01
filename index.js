@@ -32,7 +32,7 @@ import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import express from 'express';
 import bodyParser from 'body-parser';
-import { startForwarding } from "./lokiForwarder.js";
+import { startForwarding } from "./logtransfer.js";
 
 // 起動時にKoyebログをLokiに転送するフックを開始
 startForwarding();

@@ -32,8 +32,10 @@ import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import express from 'express';
 import bodyParser from 'body-parser';
-import { sendToLoki } from "./logtransfer.js";
+import { startForwarding } from "./lokiForwarder.js";
 
+// 起動時にKoyebログをLokiに転送するフックを開始
+startForwarding();
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
@@ -148,9 +150,6 @@ app.get('/', (req, res) => {
   console.log('[HEALTHZ] ping received');
   res.send('OK');
 });
-
-sendToLoki({ msg: "testmsg" });
-
 // ── Listen（必ずファイル内で1回だけ）────────
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
  const HEALTHZ_URL = process.env.HEALTHZ_URL

@@ -25,9 +25,11 @@ const ORIGINAL_STDERR_WRITE = process.stderr.write.bind(process.stderr);
 // internalLog MUST NOT use console.error or other wrapped APIs to avoid recursion.
 function internalLog(...args) {
   try {
-    const parts = args.map((a) => (typeof a === "string" ? a : (() => { try { return JSON.stringify(a); } catch { return String(a); } })()));
-    const msg = "[loki-debug] " + parts.join(" ") + "
-";
+    const parts = args.map((a) => {
+      if (typeof a === "string") return a;
+      try { return JSON.stringify(a); } catch { return String(a); }
+    });
+    const msg = "[loki-debug] " + parts.join(" ") + "\n";
     // Write directly to original stderr (bypass wrappers)
     ORIGINAL_STDERR_WRITE(msg);
   } catch (e) {
@@ -88,6 +90,11 @@ class LokiClient {
   }
 
   enqueueMessage(message, labels = {}) {
+    const MAX_QUEUE = 10000; // safety cap
+    if (this.queue.length >= MAX_QUEUE) {
+      internalLog('[loki] queue full - dropping message');
+      return;
+    }
     this.queue.push({ labels, msg: message });
     if (this.debug) internalLog("[loki] enqueued:", message, "labels=", labels, "queueLen=", this.queue.length);
     if (this.queue.length >= this.batchSize) {
@@ -208,8 +215,7 @@ export function startForwarding(opts = {}) {
       const s = typeof chunk === "string" ? chunk : chunk.toString(encoding || "utf8");
       stdoutBuf += s;
       let idx;
-      while ((idx = stdoutBuf.indexOf("
-")) !== -1) {
+      while ((idx = stdoutBuf.indexOf("\n")) !== -1) {
         const line = stdoutBuf.slice(0, idx);
         stdoutBuf = stdoutBuf.slice(idx + 1);
         if (line.length > 0) {
@@ -217,8 +223,7 @@ export function startForwarding(opts = {}) {
             loki.enqueueMessage(line, { stream: "stdout", level: "info" });
           } else {
             // write internal debug directly to original stderr (do not enqueue)
-            ORIGINAL_STDERR_WRITE(line + "
-");
+            ORIGINAL_STDERR_WRITE(line + "\n");
           }
         }
       }
@@ -233,16 +238,14 @@ export function startForwarding(opts = {}) {
       const s = typeof chunk === "string" ? chunk : chunk.toString(encoding || "utf8");
       stderrBuf += s;
       let idx;
-      while ((idx = stderrBuf.indexOf("
-")) !== -1) {
+      while ((idx = stderrBuf.indexOf("\n")) !== -1) {
         const line = stderrBuf.slice(0, idx);
         stderrBuf = stderrBuf.slice(idx + 1);
         if (line.length > 0) {
           if (!isInternalDebugLine(line)) {
             loki.enqueueMessage(line, { stream: "stderr", level: "error" });
           } else {
-            ORIGINAL_STDERR_WRITE(line + "
-");
+            ORIGINAL_STDERR_WRITE(line + "\n");
           }
         }
       }

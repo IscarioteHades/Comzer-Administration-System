@@ -33,7 +33,6 @@ import { GoogleSpreadsheet } from "google-spreadsheet";
 import express from 'express';
 import bodyParser from 'body-parser';
 
-// 起動時にKoyebログをLokiに転送するフックを開始
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());

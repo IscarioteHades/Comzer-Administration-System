@@ -61,7 +61,7 @@ class LokiClient {
 
     this.axios = axios.create({
       timeout: 15000,
-      auth: { username: this.user, password: this.token },
+      auth: { username: "api_key", password: this.token }, 
       headers: { "User-Agent": "koyeb-loki-forwarder" },
     });
 

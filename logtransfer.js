@@ -1,5 +1,5 @@
 // lokiForwarder.debug.js
-// Debug-enhanced version of lokiForwarder for Koyeb.
+// Debug-enhanced (safe) version of lokiForwarder for Koyeb.
 // Usage: replace your existing lokiForwarder.js with this during debugging.
 // Requires: npm i axios pako
 
@@ -18,18 +18,20 @@ const DEFAULTS = {
   KOYEB_SERVICE_LABEL: process.env.KOYEB_SERVICE_LABEL || undefined,
 };
 
-// 元の書き込み関数を保存（ループ防止用）
+// Save original write funcs (used to avoid recursive logging)
 const ORIGINAL_STDOUT_WRITE = process.stdout.write.bind(process.stdout);
 const ORIGINAL_STDERR_WRITE = process.stderr.write.bind(process.stderr);
 
+// internalLog MUST NOT use console.error or other wrapped APIs to avoid recursion.
 function internalLog(...args) {
   try {
-    // Koyeb のログ表示で見つけやすいようにプレフィックスを付ける
-    console.error("[loki-debug]", ...args);
+    const parts = args.map((a) => (typeof a === "string" ? a : (() => { try { return JSON.stringify(a); } catch { return String(a); } })()));
+    const msg = "[loki-debug] " + parts.join(" ") + "
+";
+    // Write directly to original stderr (bypass wrappers)
+    ORIGINAL_STDERR_WRITE(msg);
   } catch (e) {
-    try {
-      ORIGINAL_STDERR_WRITE("[loki-debug] (internalLog failed)\n");
-    } catch (_) {}
+    // If even this fails, do nothing to avoid loops
   }
 }
 
@@ -89,7 +91,10 @@ class LokiClient {
     this.queue.push({ labels, msg: message });
     if (this.debug) internalLog("[loki] enqueued:", message, "labels=", labels, "queueLen=", this.queue.length);
     if (this.queue.length >= this.batchSize) {
-      this.flushNow().catch((e) => internalLog("[loki] flush error:", e && e.message ? e.message : e));
+      // schedule flush but avoid unbounded recursion: use nextTick to decouple
+      process.nextTick(() => {
+        this.flushNow().catch((e) => internalLog("[loki] flush error:", e && e.message ? e.message : e));
+      });
     }
   }
 
@@ -122,7 +127,7 @@ class LokiClient {
     try {
       if (this.debug) internalLog("[loki] flushNow payload:", JSON.stringify(payload));
     } catch (e) {
-      // ignore JSON stringify errors
+      // ignore
     }
 
     let body = Buffer.from(JSON.stringify(payload), "utf8");
@@ -180,7 +185,6 @@ class LokiClient {
 }
 
 export function startForwarding(opts = {}) {
-  // allow overriding defaults via opts for quick debugging
   if (opts.debug) DEFAULTS.DEBUG = true;
 
   if (!DEFAULTS.LOKI_TOKEN) {
@@ -194,15 +198,29 @@ export function startForwarding(opts = {}) {
   let stdoutBuf = "";
   let stderrBuf = "";
 
+  // Helper: ignore internal debug lines to avoid enqueueing our own debug messages
+  function isInternalDebugLine(line) {
+    return typeof line === "string" && line.indexOf("[loki-debug]") === 0;
+  }
+
   function wrapStdoutWrite(chunk, encoding, cb) {
     try {
       const s = typeof chunk === "string" ? chunk : chunk.toString(encoding || "utf8");
       stdoutBuf += s;
       let idx;
-      while ((idx = stdoutBuf.indexOf("\n")) !== -1) {
+      while ((idx = stdoutBuf.indexOf("
+")) !== -1) {
         const line = stdoutBuf.slice(0, idx);
         stdoutBuf = stdoutBuf.slice(idx + 1);
-        if (line.length > 0) loki.enqueueMessage(line, { stream: "stdout", level: "info" });
+        if (line.length > 0) {
+          if (!isInternalDebugLine(line)) {
+            loki.enqueueMessage(line, { stream: "stdout", level: "info" });
+          } else {
+            // write internal debug directly to original stderr (do not enqueue)
+            ORIGINAL_STDERR_WRITE(line + "
+");
+          }
+        }
       }
     } catch (e) {
       /* swallow */
@@ -215,10 +233,18 @@ export function startForwarding(opts = {}) {
       const s = typeof chunk === "string" ? chunk : chunk.toString(encoding || "utf8");
       stderrBuf += s;
       let idx;
-      while ((idx = stderrBuf.indexOf("\n")) !== -1) {
+      while ((idx = stderrBuf.indexOf("
+")) !== -1) {
         const line = stderrBuf.slice(0, idx);
         stderrBuf = stderrBuf.slice(idx + 1);
-        if (line.length > 0) loki.enqueueMessage(line, { stream: "stderr", level: "error" });
+        if (line.length > 0) {
+          if (!isInternalDebugLine(line)) {
+            loki.enqueueMessage(line, { stream: "stderr", level: "error" });
+          } else {
+            ORIGINAL_STDERR_WRITE(line + "
+");
+          }
+        }
       }
     } catch (e) {
       /* swallow */
@@ -232,7 +258,8 @@ export function startForwarding(opts = {}) {
   process.on("uncaughtException", (err) => {
     try {
       const msg = `uncaughtException: ${err && err.stack ? err.stack : String(err)}`;
-      loki.enqueueMessage(msg, { stream: "stderr", level: "fatal" });
+      // ensure not to enqueue our own internal lines
+      if (!isInternalDebugLine(msg)) loki.enqueueMessage(msg, { stream: "stderr", level: "fatal" });
     } catch (_) {}
     loki
       .stop()
@@ -245,10 +272,8 @@ export function startForwarding(opts = {}) {
 
   process.on("unhandledRejection", (reason) => {
     try {
-      const msg = `unhandledRejection: ${
-        reason && reason.stack ? reason.stack : String(reason)
-      }`;
-      loki.enqueueMessage(msg, { stream: "stderr", level: "error" });
+      const msg = `unhandledRejection: ${reason && reason.stack ? reason.stack : String(reason)}`;
+      if (!isInternalDebugLine(msg)) loki.enqueueMessage(msg, { stream: "stderr", level: "error" });
     } catch (_) {}
   });
 

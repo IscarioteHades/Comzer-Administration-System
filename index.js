@@ -32,12 +32,6 @@ import OpenAI from "openai";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import express from 'express';
 import bodyParser from 'body-parser';
-import { startForwarding } from "./logtransfer.js";
-
-console.error("[loki-debug] GRAFANA_API_TOKEN set?:", !!process.env.GRAFANA_API_TOKEN);
-console.error("[loki-debug] LOKI_PUSH_URL:", process.env.LOKI_PUSH_URL || "default");
-const fwd = startForwarding({ batchSize: 1, flushInterval: 1000, debug: true });
-console.error("[loki-debug] forwarder.started?:", !!fwd.started);
 
 // 起動時にKoyebログをLokiに転送するフックを開始
 const app = express();

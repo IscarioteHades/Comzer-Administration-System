@@ -34,8 +34,9 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import { startForwarding } from "./logtransfer.js";
 
+console.log("koyeb-test-stdout: hello");
+console.error("koyeb-test-stderr: hello");
 // 起動時にKoyebログをLokiに転送するフックを開始
-startForwarding();
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());

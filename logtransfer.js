@@ -59,7 +59,7 @@ class LokiClient {
     this.timer = null;
     this.stopped = true;
     
-    this.axios = axios.create(
+    this.axios = axios.create({
       timeout: 15000,
       headers: {
       "User-Agent": "koyeb-loki-forwarder",

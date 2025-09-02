@@ -1,6 +1,7 @@
-// lokiForwarder.js
-// Koyeb の stdout/stderr をキャプチャして Grafana Loki に転送するモジュール
-// 必要: npm i axios pako
+// lokiForwarder.debug.js
+// Debug-enhanced version of lokiForwarder for Koyeb.
+// Usage: replace your existing lokiForwarder.js with this during debugging.
+// Requires: npm i axios pako
 
 import axios from "axios";
 import pako from "pako";
@@ -23,10 +24,12 @@ const ORIGINAL_STDERR_WRITE = process.stderr.write.bind(process.stderr);
 
 function internalLog(...args) {
   try {
-    const msg = args.join(" ") + "\n";
-    ORIGINAL_STDERR_WRITE(msg);
+    // Koyeb のログ表示で見つけやすいようにプレフィックスを付ける
+    console.error("[loki-debug]", ...args);
   } catch (e) {
-    /* ignore */
+    try {
+      ORIGINAL_STDERR_WRITE("[loki-debug] (internalLog failed)\n");
+    } catch (_) {}
   }
 }
 
@@ -46,6 +49,7 @@ class LokiClient {
     this.maxRetries = opts.maxRetries || DEFAULTS.MAX_RETRIES;
     this.retryBase = opts.retryBase || DEFAULTS.RETRY_BASE_MS;
     this.useGzip = opts.useGzip !== undefined ? opts.useGzip : DEFAULTS.USE_GZIP;
+    this.debug = opts.debug || false;
 
     this.queue = [];
     this.timer = null;
@@ -56,6 +60,8 @@ class LokiClient {
       auth: { username: this.user, password: this.token },
       headers: { "User-Agent": "koyeb-loki-forwarder" },
     });
+
+    if (this.debug) internalLog("LokiClient constructed", { url: this.url, user: this.user, batchSize: this.batchSize });
   }
 
   start() {
@@ -66,7 +72,7 @@ class LokiClient {
     }
     this.stopped = false;
     this.timer = setInterval(() => this.flushIfNeeded(), this.flushInterval);
-    internalLog("[loki] sender started. url=", this.url);
+    internalLog("[loki] sender started.", "url=", this.url, "batchSize=", this.batchSize, "flushInterval=", this.flushInterval);
   }
 
   stop() {
@@ -81,6 +87,7 @@ class LokiClient {
 
   enqueueMessage(message, labels = {}) {
     this.queue.push({ labels, msg: message });
+    if (this.debug) internalLog("[loki] enqueued:", message, "labels=", labels, "queueLen=", this.queue.length);
     if (this.queue.length >= this.batchSize) {
       this.flushNow().catch((e) => internalLog("[loki] flush error:", e && e.message ? e.message : e));
     }
@@ -112,6 +119,12 @@ class LokiClient {
     const streams = this.groupStreams(items);
     const payload = { streams };
 
+    try {
+      if (this.debug) internalLog("[loki] flushNow payload:", JSON.stringify(payload));
+    } catch (e) {
+      // ignore JSON stringify errors
+    }
+
     let body = Buffer.from(JSON.stringify(payload), "utf8");
     const headers = { "Content-Type": "application/json" };
     if (this.useGzip) {
@@ -125,11 +138,15 @@ class LokiClient {
 
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
+        if (this.debug) internalLog(`[loki] POST attempt ${attempt} url=${this.url} bytes=${body.length}`);
         const res = await this.axios.post(this.url, body, { headers });
+        if (this.debug) internalLog("[loki] POST response:", res.status, res.statusText);
         if (res.status >= 200 && res.status < 300) {
+          if (this.debug) internalLog("[loki] push succeeded");
           return;
         } else {
           const errText = `status ${res.status} ${res.statusText}`;
+          internalLog("[loki] push non-2xx:", errText);
           if (attempt === this.maxRetries) {
             internalLog("[loki] push failed (final):", errText);
             return;
@@ -138,8 +155,9 @@ class LokiClient {
         }
       } catch (err) {
         const errMsg = err.response
-          ? `${err.response.status} ${err.response.statusText}`
+          ? `${err.response.status} ${JSON.stringify(err.response.data || err.response.statusText)}`
           : err.message || err;
+        internalLog("[loki] POST exception:", errMsg);
         if (attempt === this.maxRetries) {
           internalLog("[loki] push failed (final):", errMsg);
           return;
@@ -162,6 +180,9 @@ class LokiClient {
 }
 
 export function startForwarding(opts = {}) {
+  // allow overriding defaults via opts for quick debugging
+  if (opts.debug) DEFAULTS.DEBUG = true;
+
   if (!DEFAULTS.LOKI_TOKEN) {
     internalLog("[loki] WARNING: GRAFANA_API_TOKEN is not set - forwarding disabled");
     return { started: false };
@@ -231,8 +252,9 @@ export function startForwarding(opts = {}) {
     } catch (_) {}
   });
 
+  const startedFlag = !loki.stopped;
   return {
-    started: true,
+    started: startedFlag,
     stop: async () => {
       process.stdout.write = ORIGINAL_STDOUT_WRITE;
       process.stderr.write = ORIGINAL_STDERR_WRITE;

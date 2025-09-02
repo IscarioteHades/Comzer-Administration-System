@@ -58,12 +58,16 @@ class LokiClient {
     this.queue = [];
     this.timer = null;
     this.stopped = true;
-
-    this.axios = axios.create({
+    
+    this.axios = axios.create(
       timeout: 15000,
-      auth: { username: "api_key", password: this.token }, 
-      headers: { "User-Agent": "koyeb-loki-forwarder" },
-    });
+      headers: {
+      "User-Agent": "koyeb-loki-forwarder",
+        "Authorization": `Bearer ${this.token}`, 
+    },
+  });
+
+
 
     if (this.debug) internalLog("LokiClient constructed", { url: this.url, user: this.user, batchSize: this.batchSize });
   }

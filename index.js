@@ -33,6 +33,31 @@ import { GoogleSpreadsheet } from "google-spreadsheet";
 import express from 'express';
 import bodyParser from 'body-parser';
 
+
+// 一時的なやつ
+import { replaceGuildWebhooksAvatar } from './guildWebhookReplace.js';
+async function runReplace(client) {
+  const guildId = '1188411576483590194'; // 差し替えたいギルドのID
+  const newIconUrl = 'https://www.comzer-gov.net/database/index.php/f/10047';
+  const resultDry = await replaceGuildWebhooksAvatar(client, guildId, newIconUrl, {
+    matchNames: ['コムザール連邦共和国 大統領府'],
+    dryRun: true,
+    concurrencyDelayMs: 600,
+  });
+  console.log('DryRun result:', resultDry);
+
+  // 確認してOKなら dryRun:false で実行
+  const result = await replaceGuildWebhooksAvatar(client, guildId, newIconUrl, {
+    matchNames: ['コムザール連邦共和国 大統領府'],
+    dryRun: false,
+    concurrencyDelayMs: 600,
+  });
+  console.log('Updated:', result.updated);
+  console.log('Failed:', result.failed);
+  console.log('Skipped:', result.skipped);
+}
+
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
@@ -224,7 +249,7 @@ const ROLE_CONFIG = {
       embedName:   '閣僚議会議員',
       embedIcon:   MINISTER_ICON_URL,
       webhookName: 'コムザール連邦共和国 大統領府',
-      webhookIcon: MINISTER_ICON_URL,
+      webhookIcon: COMZER_ICON_URL,
       canDelete: [...MINISTER_ROLE_IDS], 
     }])
   ),
@@ -232,8 +257,8 @@ const ROLE_CONFIG = {
     EXAMINER_ROLE_IDS.map(roleId => [ roleId, {
       embedName:   '入国審査担当官',
       embedIcon:   EXAMINER_ICON_URL,
-      webhookName: 'コムザール連邦共和国 大統領府 入国管理局',
-      webhookIcon: EXAMINER_ROLE_IDS,
+      webhookName: 'コムザール連邦共和国 大統領府',
+      webhookIcon: COMZER_ICON_URL,
       canDelete: [...EXAMINER_ROLE_IDS], 
     }])
   ),

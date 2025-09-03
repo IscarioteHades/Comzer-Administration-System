@@ -224,7 +224,7 @@ const ROLE_CONFIG = {
       embedName:   '閣僚議会議員',
       embedIcon:   MINISTER_ICON_URL,
       webhookName: 'コムザール連邦共和国 大統領府',
-      webhookIcon: COMZER_ICON_URL,
+      webhookIcon: MINISTER_ICON_URL,
       canDelete: [...MINISTER_ROLE_IDS], 
     }])
   ),
@@ -232,8 +232,8 @@ const ROLE_CONFIG = {
     EXAMINER_ROLE_IDS.map(roleId => [ roleId, {
       embedName:   '入国審査担当官',
       embedIcon:   EXAMINER_ICON_URL,
-      webhookName: 'コムザール連邦共和国 大統領府',
-      webhookIcon: COMZER_ICON_URL,
+      webhookName: 'コムザール連邦共和国 大統領府 入国管理局',
+      webhookIcon: EXAMINER_ROLE_IDS,
       canDelete: [...EXAMINER_ROLE_IDS], 
     }])
   ),

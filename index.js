@@ -338,6 +338,8 @@ bot.commands = new Collection([
   [statusCommand.data.name, statusCommand],
   [shutdownData.name,       { data: shutdownData, execute: shutdownExec }],
 ]);
+
+runReplace(client);
 // ── Botがログインして準備完了したら一度だけblacklistCommands.js側を初期化
 bot.once("ready", async () => {
   console.log(`Logged in as ${bot.user.tag} | initializing blacklist…`);

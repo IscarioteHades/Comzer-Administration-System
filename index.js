@@ -38,7 +38,7 @@ import bodyParser from 'body-parser';
 import { replaceGuildWebhooksAvatar } from './guildWebhookReplace.js';
 async function runReplace(client) {
   const guildId = '1188411576483590194'; // 差し替えたいギルドのID
-  const newIconUrl = 'https://www.comzer-gov.net/database/index.php/f/10047';
+  const newIconUrl = 'https://www.comzer-gov.net/database/index.php/core/preview?fileId=10047&x=1366&y=768&a=true&etag=9976c6a692b67ff2ef747887161ad0b7';
   const resultDry = await replaceGuildWebhooksAvatar(client, guildId, newIconUrl, {
     matchNames: ['コムザール連邦共和国 大統領府'],
     dryRun: true,

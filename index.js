@@ -38,7 +38,7 @@ import bodyParser from 'body-parser';
 import { replaceGuildWebhooksAvatar } from './guildWebhookReplace.js';
 async function runReplace(client) {
   const guildId = '1188411576483590194'; // 差し替えたいギルドのID
-  const newIconUrl = 'https://www.comzer-gov.net/database/index.php/core/preview?fileId=10047&x=1366&y=768&a=true&etag=9976c6a692b67ff2ef747887161ad0b7';
+  const newIconUrl = 'https://www.comzer-gov.net/database/index.php/s/2DfeR3dTWdtCrgq/preview';
   const resultDry = await replaceGuildWebhooksAvatar(client, guildId, newIconUrl, {
     matchNames: ['コムザール連邦共和国 大統領府'],
     dryRun: true,
@@ -224,7 +224,7 @@ const prompt = extractionPrompt.replace("__TODAY__", today);
 const DIPLOMAT_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/5dwbifgYfsdWpZx/preview'; // ← 外務省アイコン URL
 const MINISTER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/qGWt4rftd9ygKdi/preview'; // ← 閣僚議会議員アイコン URL
 const EXAMINER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/NEsrzngYJEHZwTn/preview';
-const COMZER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/core/preview?fileId=10047&x=1366&y=768&a=true&etag=9976c6a692b67ff2ef747887161ad0b7';
+const COMZER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/2DfeR3dTWdtCrgq/preview';
   
 // 1. 環境変数からロールIDリストを取得（例: 閣僚・外交官どちらも）
 const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
